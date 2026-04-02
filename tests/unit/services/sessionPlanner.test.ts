@@ -16,6 +16,7 @@ const baseProfile: LearnerProfile = {
     A5: { structureId: 'A5', masteryPercent: 69, freeProductionAccuracy: 63, opportunities: 10, uses: 6 },
     A6: { structureId: 'A6', masteryPercent: 68, freeProductionAccuracy: 62, opportunities: 10, uses: 6 },
     B1: { structureId: 'B1', masteryPercent: 18, freeProductionAccuracy: 12, opportunities: 12, uses: 1 },
+    B3: { structureId: 'B3', masteryPercent: 58, freeProductionAccuracy: 56, opportunities: 8, uses: 4 },
     B4: { structureId: 'B4', masteryPercent: 22, freeProductionAccuracy: 15, opportunities: 9, uses: 2 },
   },
 };
@@ -46,5 +47,33 @@ describe('buildSessionPlan', () => {
 
     expect(plan.phases[2].module).toBe('Schreibtrainer');
     expect(plan.phases[2].objective).toContain('Lernauftrag');
+  });
+
+  test('lets a Lernauftrag boost relevant focus structures', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      activeLernauftrag: 'I need to write a formal email to my landlord requesting a repair.',
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B4: { structureId: 'B4', masteryPercent: 72, freeProductionAccuracy: 69, opportunities: 10, uses: 4 },
+        B5: { structureId: 'B5', masteryPercent: 30, freeProductionAccuracy: 20, opportunities: 8, uses: 1 },
+      },
+    });
+
+    expect(plan.focusStructures).toContain('B5');
+  });
+
+  test('prioritizes weak productive control over mere unlocked ordering', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B1: { structureId: 'B1', masteryPercent: 40, freeProductionAccuracy: 18, opportunities: 12, uses: 1 },
+        B3: { structureId: 'B3', masteryPercent: 60, freeProductionAccuracy: 59, opportunities: 10, uses: 5 },
+        B4: { structureId: 'B4', masteryPercent: 40, freeProductionAccuracy: 42, opportunities: 10, uses: 4 },
+      },
+    });
+
+    expect(plan.focusStructures[0]).toBe('B1');
   });
 });

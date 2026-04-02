@@ -1,4 +1,4 @@
-import { getNextPriorityStructures } from '../domain/grammarGraph';
+import { getGrammarStructure, getNextPriorityStructures } from '../domain/grammarGraph';
 import type { LearnerProfile, SessionPhase, SessionPlan } from '../domain/types';
 
 export interface SessionPlanOptions {
@@ -49,10 +49,41 @@ function buildDefaultPhases(sessionMinutes: number, activeLernauftrag?: string):
   ];
 }
 
-export function buildSessionPlan(
+function normalizeText(value: string | undefined): string {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function scoreFocusStructure(
   profile: LearnerProfile,
-  options: SessionPlanOptions = {}
-): SessionPlan {
+  structureId: string
+): number {
+  const structure = getGrammarStructure(structureId);
+  const progress = profile.grammarProgress[structureId];
+  const mastery = progress?.masteryPercent ?? 0;
+  const freeProductionAccuracy = progress?.freeProductionAccuracy ?? 0;
+  const usageRatio = progress && progress.opportunities > 0 ? progress.uses / progress.opportunities : 0;
+  const priorityBase = structure.priority === 'highest'
+    ? 120
+    : structure.priority === 'high'
+      ? 90
+      : structure.priority === 'medium'
+        ? 60
+        : 30;
+  const weakProductionPenalty = Math.max(0, 65 - freeProductionAccuracy) * 1.2;
+  const lowMasteryPenalty = Math.max(0, 65 - mastery);
+  const avoidancePenalty = usageRatio < 0.1 ? 20 : usageRatio < 0.2 ? 10 : 0;
+
+  const lernauftragText = normalizeText(profile.activeLernauftrag);
+  const lernauftragBoost = (
+    (structureId === 'B5' && /email|request|formal|landlord|interview/.test(lernauftragText))
+    || (structureId === 'B4' && /why|because|reason|explain|interview/.test(lernauftragText))
+    || (structureId === 'B1' && /with|friend|weekend|appointment|mit /.test(lernauftragText))
+  ) ? 45 : 0;
+
+  return priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + lernauftragBoost;
+}
+
+function pickFocusStructures(profile: LearnerProfile): string[] {
   const masteryById = Object.fromEntries(
     Object.entries(profile.grammarProgress).map(([structureId, progress]) => [
       structureId,
@@ -60,9 +91,29 @@ export function buildSessionPlan(
     ])
   );
 
-  const focusStructures = getNextPriorityStructures(masteryById)
+  const unlocked = getNextPriorityStructures(masteryById);
+
+  return unlocked
+    .sort((left, right) => {
+      const scoreDelta = scoreFocusStructure(profile, right.id) - scoreFocusStructure(profile, left.id);
+      if (scoreDelta !== 0) return scoreDelta;
+
+      const leftProgress = profile.grammarProgress[left.id];
+      const rightProgress = profile.grammarProgress[right.id];
+      const masteryDelta = (leftProgress?.masteryPercent ?? 0) - (rightProgress?.masteryPercent ?? 0);
+      if (masteryDelta !== 0) return masteryDelta;
+
+      return left.id.localeCompare(right.id);
+    })
     .slice(0, 2)
-    .map(structure => structure.id);
+    .map((structure) => structure.id);
+}
+
+export function buildSessionPlan(
+  profile: LearnerProfile,
+  options: SessionPlanOptions = {}
+): SessionPlan {
+  const focusStructures = pickFocusStructures(profile);
 
   return {
     learnerId: profile.learnerId,
