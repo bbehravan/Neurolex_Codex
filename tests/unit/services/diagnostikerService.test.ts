@@ -37,6 +37,8 @@ describe('DiagnostikerService', () => {
     const profile = await service.ensureLearnerProfile();
 
     expect(profile.learnerId).toBe('primary-learner');
+    expect(profile.avoidanceSignals).toEqual([]);
+    expect(profile.upcomingTasks).toEqual([]);
     expect(vault.files.has('neurolex/system/learner-profile.json')).toBe(true);
     expect(vault.files.has('neurolex/system/learner-profile.md')).toBe(true);
   });
@@ -49,6 +51,8 @@ describe('DiagnostikerService', () => {
       nativeLanguage: 'English',
       currentLevel: 'A2',
       preferredSessionMinutes: 30,
+      avoidanceSignals: [],
+      upcomingTasks: [],
       grammarProgress: {
         A1: { structureId: 'A1', masteryPercent: 80, freeProductionAccuracy: 72, opportunities: 10, uses: 6 },
       },
@@ -75,6 +79,8 @@ describe('DiagnostikerService', () => {
     expect(path).toBe('neurolex/system/learner-calibration.md');
     expect(calibration).toContain('# NeuroLex Calibration');
     expect(calibration).toContain('- learner_level: B1');
+    expect(calibration).toContain('## Avoidance Signals');
+    expect(calibration).toContain('## Upcoming Tasks');
     expect(calibration).toContain('- B1: 18  # Dative Case');
   });
 
@@ -100,6 +106,13 @@ describe('DiagnostikerService', () => {
       '- session_duration_minutes: 75',
       '- active_lernauftrag: Write a formal email to my landlord.',
       '',
+      '## Avoidance Signals',
+      '- B4: flagged | avoids subordinate clauses in speech',
+      '- B5: monitoring | polite requests still rare',
+      '',
+      '## Upcoming Tasks',
+      '- title: Job interview | deadline: 2026-04-10 | structures: B4, B5 | notes: formal answers',
+      '',
       '## Grammar Mastery',
       '### Zone A',
       '- A1: 85  # Present Tense',
@@ -117,8 +130,21 @@ describe('DiagnostikerService', () => {
     expect(profile.currentLevel).toBe('B2');
     expect(profile.preferredSessionMinutes).toBe(75);
     expect(profile.activeLernauftrag).toBe('Write a formal email to my landlord.');
+    expect(profile.avoidanceSignals).toEqual([
+      { structureId: 'B4', status: 'flagged', note: 'avoids subordinate clauses in speech' },
+      { structureId: 'B5', status: 'monitoring', note: 'polite requests still rare' },
+    ]);
+    expect(profile.upcomingTasks).toEqual([
+      {
+        title: 'Job interview',
+        deadline: '2026-04-10',
+        structures: ['B4', 'B5'],
+        notes: 'formal answers',
+      },
+    ]);
     expect(profile.grammarProgress.B1.masteryPercent).toBe(62);
     expect(profile.grammarProgress.C1.masteryPercent).toBe(15);
     expect(vault.files.get(service.getProfileNotePath())).toContain('Active Lernauftrag: Write a formal email to my landlord.');
+    expect(vault.files.get(service.getProfileNotePath())).toContain('Avoidance signals: 2');
   });
 });

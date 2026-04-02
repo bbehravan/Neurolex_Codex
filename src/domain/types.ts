@@ -19,6 +19,19 @@ export interface GrammarProgress {
   uses: number;
 }
 
+export interface AvoidanceSignal {
+  structureId: string;
+  status: 'monitoring' | 'flagged';
+  note?: string;
+}
+
+export interface LearnerTask {
+  title: string;
+  deadline?: string;
+  structures: string[];
+  notes?: string;
+}
+
 export interface LearnerProfile {
   learnerId: string;
   aiEngine: AiEngine;
@@ -27,6 +40,8 @@ export interface LearnerProfile {
   currentLevel: string;
   preferredSessionMinutes: number;
   activeLernauftrag?: string;
+  avoidanceSignals: AvoidanceSignal[];
+  upcomingTasks: LearnerTask[];
   grammarProgress: Record<string, GrammarProgress>;
 }
 

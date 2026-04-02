@@ -1,6 +1,6 @@
 import type { VaultFileAdapter } from '../core/storage/VaultFileAdapter';
 import { listGrammarStructures } from '../domain/grammarGraph';
-import type { GrammarProgress, LearnerProfile } from '../domain/types';
+import type { AvoidanceSignal, GrammarProgress, LearnerProfile, LearnerTask } from '../domain/types';
 import { buildSeedLearnerProfile } from './learnerProfileSeed';
 
 export interface DiagnostikerSettings {
@@ -32,6 +32,18 @@ function deriveUses(masteryPercent: number, previous?: GrammarProgress): number 
   if (masteryPercent >= 20) return 2;
   if (masteryPercent > 0) return 1;
   return 0;
+}
+
+function parseCommaSeparated(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function isDefined<T>(value: T | null): value is T {
+  return value !== null;
 }
 
 const KNOWN_GRAMMAR_IDS = new Set(listGrammarStructures().map((structure) => structure.id));
@@ -154,6 +166,10 @@ export class DiagnostikerService {
       `- Mastered structures (>=65%): ${mastered}/${tracked}`,
       `- Developing structures: ${tracked - mastered}`,
       '',
+      '## Stored Diagnostics',
+      `- Avoidance signals: ${profile.avoidanceSignals.length}`,
+      `- Upcoming tasks: ${profile.upcomingTasks.length}`,
+      '',
       '## Storage',
       `- Machine-readable profile: ${this.getProfileJsonPath()}`,
       `- Calibration note: ${this.getCalibrationNotePath()}`,
@@ -189,12 +205,28 @@ export class DiagnostikerService {
       `- session_duration_minutes: ${profile.preferredSessionMinutes}`,
       `- active_lernauftrag: ${profile.activeLernauftrag || ''}`,
       '',
+      '## Avoidance Signals',
+      profile.avoidanceSignals.length > 0
+        ? profile.avoidanceSignals.map((signal) =>
+          `- ${signal.structureId}: ${signal.status}${signal.note ? ` | ${signal.note}` : ''}`
+        ).join('\n')
+        : '- none',
+      '',
+      '## Upcoming Tasks',
+      profile.upcomingTasks.length > 0
+        ? profile.upcomingTasks.map((task) =>
+          `- title: ${task.title} | deadline: ${task.deadline || ''} | structures: ${task.structures.join(', ')}${task.notes ? ` | notes: ${task.notes}` : ''}`
+        ).join('\n')
+        : '- none',
+      '',
       '## Grammar Mastery',
       grouped,
       '',
       '## Notes',
       '- Use percentages from 0 to 100.',
       '- Leave `active_lernauftrag` blank if there is no current real-life goal.',
+      '- Avoidance signal format: `- B4: flagged | avoids subordinate clauses in speech`.',
+      '- Upcoming task format: `- title: Job interview | deadline: 2026-04-10 | structures: B4, B5 | notes: formal answers`.',
       '- Unknown grammar IDs are ignored when the calibration is applied.',
       '',
     ].join('\n');
@@ -209,6 +241,8 @@ export class DiagnostikerService {
     const learnerLevel = scalarValue('learner_level');
     const sessionDurationRaw = scalarValue('session_duration_minutes');
     const activeLernauftragRaw = scalarValue('active_lernauftrag');
+    const avoidanceSignals = this.parseAvoidanceSignals(markdown);
+    const upcomingTasks = this.parseUpcomingTasks(markdown);
 
     const updatedGrammarProgress = { ...profile.grammarProgress };
     const grammarLinePattern = /^- ([ABC]\d+):\s*(\d{1,3})(?:\s+#.*)?$/gm;
@@ -238,7 +272,59 @@ export class DiagnostikerService {
         ? Math.max(15, Number.parseInt(sessionDurationRaw, 10) || profile.preferredSessionMinutes)
         : profile.preferredSessionMinutes,
       activeLernauftrag: activeLernauftragRaw || undefined,
+      avoidanceSignals,
+      upcomingTasks,
       grammarProgress: updatedGrammarProgress,
     };
+  }
+
+  private parseAvoidanceSignals(markdown: string): AvoidanceSignal[] {
+    const section = markdown.match(/## Avoidance Signals([\s\S]*?)(?:\n## |\s*$)/);
+    if (!section) return [];
+
+    return section[1]
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('- ') && line !== '- none')
+      .map((line) => line.slice(2))
+      .map((line): AvoidanceSignal | null => {
+        const [left, note] = line.split('|').map((part) => part.trim());
+        const [structureId, statusRaw] = left.split(':').map((part) => part.trim());
+        if (!KNOWN_GRAMMAR_IDS.has(structureId)) return null;
+        const status = statusRaw === 'flagged' ? 'flagged' : statusRaw === 'monitoring' ? 'monitoring' : null;
+        if (!status) return null;
+        return { structureId, status, note: note || undefined };
+      })
+      .filter(isDefined);
+  }
+
+  private parseUpcomingTasks(markdown: string): LearnerTask[] {
+    const section = markdown.match(/## Upcoming Tasks([\s\S]*?)(?:\n## |\s*$)/);
+    if (!section) return [];
+
+    return section[1]
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('- ') && line !== '- none')
+      .map((line) => line.slice(2))
+      .map((line): LearnerTask | null => {
+        const fields = Object.fromEntries(
+          line.split('|')
+            .map((part) => part.trim())
+            .map((part) => {
+              const [key, value] = part.split(':').map((piece) => piece.trim());
+              return [key, value ?? ''];
+            })
+        );
+        const title = fields.title;
+        if (!title) return null;
+        return {
+          title,
+          deadline: fields.deadline || undefined,
+          structures: parseCommaSeparated(fields.structures).filter((structureId) => KNOWN_GRAMMAR_IDS.has(structureId)),
+          notes: fields.notes || undefined,
+        };
+      })
+      .filter(isDefined);
   }
 }

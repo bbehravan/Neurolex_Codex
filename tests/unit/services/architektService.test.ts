@@ -8,6 +8,8 @@ const profile: LearnerProfile = {
   nativeLanguage: 'English',
   currentLevel: 'B1',
   preferredSessionMinutes: 60,
+  avoidanceSignals: [],
+  upcomingTasks: [],
   grammarProgress: {
     A1: { structureId: 'A1', masteryPercent: 75, freeProductionAccuracy: 70, opportunities: 12, uses: 8 },
     A2: { structureId: 'A2', masteryPercent: 80, freeProductionAccuracy: 78, opportunities: 15, uses: 10 },

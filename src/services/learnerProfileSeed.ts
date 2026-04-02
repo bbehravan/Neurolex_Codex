@@ -63,6 +63,8 @@ export function buildSeedLearnerProfile(input: LearnerProfileSeedInput): Learner
     nativeLanguage: input.nativeLanguage,
     currentLevel: input.learnerLevel,
     preferredSessionMinutes: input.preferredSessionMinutes,
+    avoidanceSignals: [],
+    upcomingTasks: [],
     grammarProgress: buildGrammarProgress(input.learnerLevel),
   };
 }

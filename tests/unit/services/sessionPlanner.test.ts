@@ -8,6 +8,8 @@ const baseProfile: LearnerProfile = {
   nativeLanguage: 'English',
   currentLevel: 'B1',
   preferredSessionMinutes: 60,
+  avoidanceSignals: [],
+  upcomingTasks: [],
   grammarProgress: {
     A1: { structureId: 'A1', masteryPercent: 75, freeProductionAccuracy: 70, opportunities: 12, uses: 8 },
     A2: { structureId: 'A2', masteryPercent: 80, freeProductionAccuracy: 78, opportunities: 15, uses: 10 },
@@ -79,5 +81,45 @@ describe('buildSessionPlan', () => {
     });
 
     expect(plan.focusStructures[0]).toBe('B1');
+  });
+
+  test('prioritizes explicitly flagged avoidance targets', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      avoidanceSignals: [
+        { structureId: 'B4', status: 'flagged', note: 'avoids subordinate clauses in speech' },
+      ],
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B1: { structureId: 'B1', masteryPercent: 35, freeProductionAccuracy: 28, opportunities: 10, uses: 2 },
+        B4: { structureId: 'B4', masteryPercent: 40, freeProductionAccuracy: 34, opportunities: 10, uses: 3 },
+      },
+    });
+
+    expect(plan.focusStructures[0]).toBe('B4');
+    expect(plan.focusSelections[0].reasons.join(' ')).toContain('Stored avoidance status: flagged');
+  });
+
+  test('uses upcoming tasks as explicit planning signals', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      upcomingTasks: [
+        {
+          title: 'Job interview',
+          deadline: '2026-04-10',
+          structures: ['B4', 'B5'],
+          notes: 'formal answers',
+        },
+      ],
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B4: { structureId: 'B4', masteryPercent: 72, freeProductionAccuracy: 70, opportunities: 10, uses: 5 },
+        B5: { structureId: 'B5', masteryPercent: 38, freeProductionAccuracy: 30, opportunities: 8, uses: 2 },
+      },
+    });
+
+    expect(plan.focusStructures).toContain('C1');
+    expect(plan.focusSelections.find((selection) => selection.structureId === 'C1')?.reasons.join(' '))
+      .toContain('Low current mastery');
   });
 });

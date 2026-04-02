@@ -84,6 +84,16 @@ function analyzeFocusStructure(
     || (structureId === 'B4' && /why|because|reason|explain|interview/.test(lernauftragText))
     || (structureId === 'B1' && /with|friend|weekend|appointment|mit /.test(lernauftragText))
   ) ? 45 : 0;
+  const avoidanceSignals = profile.avoidanceSignals ?? [];
+  const upcomingTasks = profile.upcomingTasks ?? [];
+  const avoidanceSignal = avoidanceSignals.find((signal) => signal.structureId === structureId);
+  const avoidanceSignalBoost = avoidanceSignal?.status === 'flagged'
+    ? 55
+    : avoidanceSignal?.status === 'monitoring'
+      ? 20
+      : 0;
+  const taskMatch = upcomingTasks.find((task) => task.structures.includes(structureId));
+  const taskBoost = taskMatch ? 35 : 0;
 
   const reasons: string[] = [];
   if (structure.priority === 'highest' || structure.priority === 'high') {
@@ -100,12 +110,18 @@ function analyzeFocusStructure(
   } else if (usageRatio < 0.2) {
     reasons.push('Usage is low enough to monitor for avoidance.');
   }
+  if (avoidanceSignal) {
+    reasons.push(`Stored avoidance status: ${avoidanceSignal.status}.`);
+  }
   if (lernauftragBoost > 0) {
     reasons.push('Directly supports the active Lernauftrag.');
   }
+  if (taskMatch) {
+    reasons.push(`Supports upcoming task: ${taskMatch.title}.`);
+  }
 
   return {
-    score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + lernauftragBoost,
+    score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + avoidanceSignalBoost + lernauftragBoost + taskBoost,
     reasons,
   };
 }
