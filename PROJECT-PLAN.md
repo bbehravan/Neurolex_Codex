@@ -115,9 +115,22 @@ Status as of 2026-04-02:
 
 - Phase 0: complete
 - Phase 1: complete
-- Phase 2: next
+- Phase 2: complete
+- Phase 3: next
 - Current recommendation:
-  build the first end-to-end session flow with `Wortmeister`, `Grammatiktrainer`, `Korrektor`, and `Uebungsmeister`
+  deepen learner-facing production with `Schreibtrainer`, `Sprechtrainer`, and stronger Lernauftrag adaptation
+
+### Phase 2 implementation target
+
+- `Uebungsmeister` should orchestrate one complete note-driven session package
+- the package should include:
+  - session plan
+  - vocabulary warm-up note
+  - grammar core note
+  - correction guide
+  - session recap
+- the first learner-facing command should generate the full package into the vault in one pass
+- vocabulary and grammar notes must be saved as standalone artifacts inside the session tree
 
 ## Phase 0: Bootstrap
 

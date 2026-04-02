@@ -82,3 +82,17 @@ export interface SessionSummary {
   nextActions: string[];
   reflectionPrompt: string;
 }
+
+export interface SessionArtifact {
+  kind: 'session-plan' | 'warmup-vocabulary' | 'grammar-core' | 'correction-guide' | 'session-recap' | 'session-run';
+  path: string;
+  content: string;
+}
+
+export interface SessionRun {
+  sessionId: string;
+  generatedAt: string;
+  plan: SessionPlan;
+  summary: SessionSummary;
+  artifacts: SessionArtifact[];
+}

@@ -43,6 +43,7 @@ import { setLocale } from './i18n';
 import { ArchitektService } from './services/architektService';
 import { DiagnostikerService } from './services/diagnostikerService';
 import { MentorService } from './services/mentorService';
+import { UebungsmeisterService } from './services/uebungsmeisterService';
 import { ClaudeCliResolver } from './utils/claudeCli';
 import { buildCursorContext } from './utils/editor';
 import { getCurrentModelFromEnvironment, getModelsFromEnvironment, parseEnvironmentVariables } from './utils/env';
@@ -248,6 +249,14 @@ export default class ClaudianPlugin extends Plugin {
       name: 'Generate NeuroLex session recap note',
       callback: async () => {
         await this.generateNeuroLexSessionRecapNote();
+      },
+    });
+
+    this.addCommand({
+      id: 'run-neurolex-session',
+      name: 'Run NeuroLex session package',
+      callback: async () => {
+        await this.runNeuroLexSessionPackage();
       },
     });
 
@@ -672,6 +681,24 @@ export default class ClaudianPlugin extends Plugin {
     const { path, content } = mentor.buildSessionRecapArtifact(profile, plan);
     await vault.write(path, content);
     new Notice(`NeuroLex session recap saved to ${path}`);
+  }
+
+  async runNeuroLexSessionPackage(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    const uebungsmeister = new UebungsmeisterService(this.getNeuroLexNotesRoot());
+    const sessionRun = uebungsmeister.buildSessionRun(profile);
+
+    for (const artifact of sessionRun.artifacts) {
+      await vault.write(artifact.path, artifact.content);
+    }
+
+    const vocabularyArtifact = sessionRun.artifacts.find((artifact) => artifact.kind === 'warmup-vocabulary');
+    const grammarArtifact = sessionRun.artifacts.find((artifact) => artifact.kind === 'grammar-core');
+    new Notice(
+      `NeuroLex session package saved. Vocabulary: ${vocabularyArtifact?.path ?? 'n/a'} | Grammar: ${grammarArtifact?.path ?? 'n/a'}`
+    );
   }
 
   /** Updates and persists environment variables, restarting processes to apply changes. */

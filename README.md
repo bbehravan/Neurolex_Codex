@@ -13,14 +13,19 @@ This repository is being built as a focused fork of Claudian, reworked into a de
 
 ## Current status
 
-This repo has been bootstrapped from Claudian `1.3.72` and is now in the first NeuroLex foundation phase.
+This repo has been bootstrapped from Claudian `1.3.72` and now completes the first NeuroLex MVP foundation:
+
+- learner profile persistence and calibration
+- prerequisite-aware session planning
+- recap generation through `Mentor`
+- one end-to-end note-driven session package through `Uebungsmeister`
 
 Current repository priorities:
 
 - preserve the stable Obsidian plugin shell from Claudian
 - rebrand the plugin to NeuroLex
-- add NeuroLex domain models and planning logic
-- implement the first MVP learning loop before advanced voice and dashboard features
+- deepen the first MVP learning loop before advanced voice and dashboard features
+- move from Phase 2 into richer learner-facing production modules
 
 ## MVP direction
 

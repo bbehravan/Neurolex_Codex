@@ -106,6 +106,16 @@ describe('ClaudianPlugin', () => {
       });
     });
 
+    it('should add command to run a NeuroLex session package', async () => {
+      await plugin.onload();
+
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'run-neurolex-session',
+        name: 'Run NeuroLex session package',
+        callback: expect.any(Function),
+      });
+    });
+
     it('should migrate legacy cli path to hostname-based paths and clear old field', async () => {
       const legacyPath = '/legacy/claude';
       mockApp.vault.adapter.exists.mockImplementation(async (path: string) => {
@@ -409,6 +419,19 @@ describe('ClaudianPlugin', () => {
       await commandConfig.callback();
 
       expect(mockApp.workspace.revealLeaf).toHaveBeenCalledWith(mockLeaf);
+    });
+  });
+
+  describe('NeuroLex session package', () => {
+    it('writes vocabulary and grammar notes when a session package is generated', async () => {
+      await plugin.onload();
+
+      await plugin.runNeuroLexSessionPackage();
+
+      const writePaths = (mockApp.vault.adapter.write as jest.Mock).mock.calls.map(([path]) => path);
+      expect(writePaths.some((path: string) => path.includes('vocabulary-warmup-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('grammar-core-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('session-run-'))).toBe(true);
     });
   });
 
