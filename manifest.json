@@ -1,0 +1,10 @@
+{
+  "id": "neurolex",
+  "name": "NeuroLex",
+  "version": "1.3.72",
+  "minAppVersion": "1.4.5",
+  "description": "AI-powered language acquisition inside Obsidian, with guided sessions, grammar planning, spaced repetition, and adaptive tutoring workflows.",
+  "author": "Bahman Behravan",
+  "authorUrl": "https://github.com/bbehravan",
+  "isDesktopOnly": true
+}
