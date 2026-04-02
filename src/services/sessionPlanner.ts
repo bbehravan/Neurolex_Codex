@@ -1,6 +1,11 @@
 import { getNextPriorityStructures } from '../domain/grammarGraph';
 import type { LearnerProfile, SessionPhase, SessionPlan } from '../domain/types';
 
+export interface SessionPlanOptions {
+  generatedAt?: string;
+  notesFolder?: string;
+}
+
 function buildDefaultPhases(sessionMinutes: number, activeLernauftrag?: string): SessionPhase[] {
   const applicationObjective = activeLernauftrag
     ? `Apply today's work to the active Lernauftrag: ${activeLernauftrag}`
@@ -44,7 +49,10 @@ function buildDefaultPhases(sessionMinutes: number, activeLernauftrag?: string):
   ];
 }
 
-export function buildSessionPlan(profile: LearnerProfile): SessionPlan {
+export function buildSessionPlan(
+  profile: LearnerProfile,
+  options: SessionPlanOptions = {}
+): SessionPlan {
   const masteryById = Object.fromEntries(
     Object.entries(profile.grammarProgress).map(([structureId, progress]) => [
       structureId,
@@ -58,11 +66,11 @@ export function buildSessionPlan(profile: LearnerProfile): SessionPlan {
 
   return {
     learnerId: profile.learnerId,
-    generatedAt: new Date().toISOString(),
+    generatedAt: options.generatedAt ?? new Date().toISOString(),
     aiEngine: profile.aiEngine,
     targetLanguage: profile.targetLanguage,
     focusStructures,
-    notesFolder: 'neurolex/',
+    notesFolder: options.notesFolder ?? 'neurolex/',
     phases: buildDefaultPhases(profile.preferredSessionMinutes, profile.activeLernauftrag),
   };
 }

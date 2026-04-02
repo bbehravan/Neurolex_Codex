@@ -36,8 +36,8 @@ import {
   normalizeVisibleModelVariant,
   VIEW_TYPE_CLAUDIAN,
 } from './core/types';
-import { buildSessionPlan } from './services/sessionPlanner';
-import { buildSeedLearnerProfile } from './services/learnerProfileSeed';
+import { ArchitektService } from './services/architektService';
+import { DiagnostikerService } from './services/diagnostikerService';
 import { ClaudianView } from './features/chat/ClaudianView';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
 import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
@@ -239,6 +239,14 @@ export default class ClaudianPlugin extends Plugin {
       name: 'Generate NeuroLex session plan note',
       callback: async () => {
         await this.generateNeuroLexSessionPlanNote();
+      },
+    });
+
+    this.addCommand({
+      id: 'initialize-neurolex-learner-profile',
+      name: 'Initialize NeuroLex learner profile',
+      callback: async () => {
+        await this.initializeNeuroLexLearnerProfile();
       },
     });
 
@@ -587,60 +595,30 @@ export default class ClaudianPlugin extends Plugin {
     return normalized ? `${normalized}/` : 'neurolex/';
   }
 
-  private buildNeuroLexSessionPlanMarkdown(): { path: string; content: string } {
-    const profile = buildSeedLearnerProfile({
+  private createDiagnostikerService(vault: VaultFileAdapter): DiagnostikerService {
+    return new DiagnostikerService(vault, {
       aiEngine: this.settings.aiEngine,
       targetLanguage: this.settings.neurolexTargetLanguage,
       nativeLanguage: this.settings.neurolexNativeLanguage,
       learnerLevel: this.settings.neurolexLearnerLevel,
       preferredSessionMinutes: this.settings.neurolexSessionDurationMinutes,
+      notesFolder: this.getNeuroLexNotesRoot(),
     });
-    const plan = buildSessionPlan(profile);
-    const date = new Date();
-    const isoDay = date.toISOString().slice(0, 10);
-    const monthKey = isoDay.slice(0, 7);
-    const timestamp = date.toISOString().replace(/[:]/g, '-');
-    const folder = `${this.getNeuroLexNotesRoot()}sessions/${monthKey}`;
-    const path = `${folder}/session-plan-${timestamp}.md`;
-    const phases = plan.phases
-      .map((phase) => `## ${phase.title}\n- Duration: ${phase.durationMinutes} min\n- Module: ${phase.module}\n- Objective: ${phase.objective}`)
-      .join('\n\n');
-    const focusStructures = plan.focusStructures.length > 0
-      ? plan.focusStructures.map((structureId) => `- ${structureId}`).join('\n')
-      : '- Calibration needed';
+  }
 
-    const content = [
-      '---',
-      'title: "NeuroLex Session Plan"',
-      'type: session-plan',
-      `date: ${isoDay}`,
-      `learner_level: ${profile.currentLevel}`,
-      `target_language: ${profile.targetLanguage}`,
-      `ai_engine: ${profile.aiEngine}`,
-      '---',
-      '',
-      '# NeuroLex Session Plan',
-      '',
-      '## Focus Structures',
-      focusStructures,
-      '',
-      phases,
-      '',
-      '## Planner Context',
-      `- Native language: ${profile.nativeLanguage}`,
-      `- Session duration: ${this.settings.neurolexSessionDurationMinutes} min`,
-      `- Notes folder: ${this.getNeuroLexNotesRoot()}`,
-      `- MongoDB: ${this.settings.neurolexMongoConnection}`,
-      `- Voyage server: ${this.settings.neurolexVoyageServer}`,
-      '',
-    ].join('\n');
-
-    return { path, content };
+  async initializeNeuroLexLearnerProfile(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    new Notice(`NeuroLex learner profile ready for ${profile.targetLanguage} (${profile.currentLevel})`);
   }
 
   async generateNeuroLexSessionPlanNote(): Promise<void> {
     const vault = new VaultFileAdapter(this.app);
-    const { path, content } = this.buildNeuroLexSessionPlanMarkdown();
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    const architekt = new ArchitektService(this.getNeuroLexNotesRoot());
+    const { path, content } = architekt.buildSessionPlanArtifact(profile);
     await vault.write(path, content);
     new Notice(`NeuroLex session plan saved to ${path}`);
   }
