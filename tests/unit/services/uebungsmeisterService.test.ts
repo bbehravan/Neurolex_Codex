@@ -41,15 +41,18 @@ const profile: LearnerProfile = {
 };
 
 describe('UebungsmeisterService', () => {
-  test('builds a complete session package with saved vocabulary and grammar artifacts', () => {
+  test('builds a complete session package with curated application artifacts', () => {
     const uebungsmeister = new UebungsmeisterService('neurolex/');
     const sessionRun = uebungsmeister.buildSessionRun(profile, new Date('2026-04-02T12:00:00.000Z'));
 
     expect(sessionRun.sessionId).toBe('session-2026-04-02T12-00-00.000Z');
+    expect(sessionRun.plan.applicationMode).toBe('speaking');
     expect(sessionRun.artifacts.map((artifact) => artifact.kind)).toEqual([
       'session-plan',
       'warmup-vocabulary',
       'grammar-core',
+      'curation-brief',
+      'speaking-application',
       'correction-guide',
       'session-recap',
       'session-run',
@@ -58,7 +61,11 @@ describe('UebungsmeisterService', () => {
       .toContain('vocabulary-warmup-2026-04-02T12-00-00.000Z.md');
     expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'grammar-core')?.path)
       .toContain('grammar-core-2026-04-02T12-00-00.000Z.md');
+    expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'curation-brief')?.path)
+      .toContain('curation-brief-2026-04-02T12-00-00.000Z.md');
+    expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'speaking-application')?.path)
+      .toContain('speaking-application-2026-04-02T12-00-00.000Z.md');
     expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'session-run')?.content)
-      .toContain('## Artifacts');
+      .toContain('## Lernauftrag Adaptation');
   });
 });

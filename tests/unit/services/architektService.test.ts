@@ -60,6 +60,8 @@ describe('ArchitektService', () => {
     expect(artifact.content).toContain('- B4');
     expect(artifact.content).toContain('## Focus Rationale');
     expect(artifact.content).toContain('B1 (Dative Case)');
+    expect(artifact.content).toContain('## Application Strategy');
+    expect(artifact.content).toContain('Mode: speaking');
     expect(artifact.content).toContain('## Diagnostics Context');
     expect(artifact.content).toContain('Active Lernauftrag: Explain reasons clearly in a job interview.');
     expect(artifact.content).toContain('Avoidance signal: B4 is flagged');

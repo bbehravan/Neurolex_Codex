@@ -52,6 +52,8 @@ describe('MentorService', () => {
 
     expect(artifact.path).toBe('neurolex/sessions/2026-04/session-recap-2026-04-02T12-00-00.000Z.md');
     expect(artifact.content).toContain('# NeuroLex Session Recap');
+    expect(artifact.content).toContain('## Application Strategy');
+    expect(artifact.content).toContain('Mode: speaking');
     expect(artifact.content).toContain('## Wins To Carry Forward');
     expect(artifact.content).toContain('## Watch Items');
     expect(artifact.content).toContain('## Next Session Actions');

@@ -2,7 +2,10 @@ import type { LearnerProfile, SessionArtifact, SessionRun } from '../domain/type
 import { ArchitektService } from './architektService';
 import { GrammatiktrainerService } from './grammatiktrainerService';
 import { KorrektorService } from './korrektorService';
+import { KuratorService } from './kuratorService';
 import { MentorService } from './mentorService';
+import { SchreibtrainerService } from './schreibtrainerService';
+import { SprechtrainerService } from './sprechtrainerService';
 import { WortmeisterService } from './wortmeisterService';
 
 function normalizeNotesRoot(notesFolder: string): string {
@@ -27,6 +30,9 @@ export class UebungsmeisterService {
   private readonly mentor: MentorService;
   private readonly wortmeister: WortmeisterService;
   private readonly grammatiktrainer: GrammatiktrainerService;
+  private readonly kurator: KuratorService;
+  private readonly schreibtrainer: SchreibtrainerService;
+  private readonly sprechtrainer: SprechtrainerService;
   private readonly korrektor: KorrektorService;
 
   constructor(private readonly notesFolder: string) {
@@ -35,6 +41,9 @@ export class UebungsmeisterService {
     this.mentor = new MentorService(normalized);
     this.wortmeister = new WortmeisterService(normalized);
     this.grammatiktrainer = new GrammatiktrainerService(normalized);
+    this.kurator = new KuratorService(normalized);
+    this.schreibtrainer = new SchreibtrainerService(normalized);
+    this.sprechtrainer = new SprechtrainerService(normalized);
     this.korrektor = new KorrektorService(normalized);
   }
 
@@ -52,6 +61,10 @@ export class UebungsmeisterService {
     const planArtifactResult = this.architekt.buildSessionPlanArtifact(profile, now);
     const vocabularyArtifact = this.wortmeister.buildWarmupArtifact(profile, planArtifactResult.plan, now);
     const grammarArtifact = this.grammatiktrainer.buildCoreArtifact(profile, planArtifactResult.plan, now);
+    const curationArtifact = this.kurator.buildCurationArtifact(profile, planArtifactResult.plan, now);
+    const applicationArtifact = planArtifactResult.plan.applicationMode === 'writing'
+      ? this.schreibtrainer.buildWritingArtifact(profile, planArtifactResult.plan, now)
+      : this.sprechtrainer.buildSpeakingArtifact(profile, planArtifactResult.plan, now);
     const correctionArtifact = this.korrektor.buildCorrectionGuideArtifact(profile, planArtifactResult.plan, now);
     const recapArtifactResult = this.mentor.buildSessionRecapArtifact(profile, planArtifactResult.plan, now);
 
@@ -70,7 +83,7 @@ export class UebungsmeisterService {
       '## Flow',
       '- Warm-up: Wortmeister vocabulary review',
       '- Core: Grammatiktrainer targeted practice',
-      '- Application: learner task with Korrektor guidance',
+      `- Application: ${planArtifactResult.plan.applicationMode === 'writing' ? 'Schreibtrainer' : 'Sprechtrainer'} with Kurator framing and Korrektor guidance`,
       '- Cool-down: Mentor recap and reflection',
       '',
       '## Focus Structures',
@@ -78,10 +91,16 @@ export class UebungsmeisterService {
         `- ${selection.structureId} (${selection.title})`
       )),
       '',
+      '## Lernauftrag Adaptation',
+      `- Application mode: ${planArtifactResult.plan.applicationMode}`,
+      `- Curated brief: ${planArtifactResult.plan.curationBrief}`,
+      '',
       '## Artifacts',
       `- Session plan: ${planArtifactResult.path}`,
       `- Vocabulary warm-up: ${vocabularyArtifact.path}`,
       `- Grammar core: ${grammarArtifact.path}`,
+      `- Curation brief: ${curationArtifact.path}`,
+      `- Application task: ${applicationArtifact.path}`,
       `- Correction guide: ${correctionArtifact.path}`,
       `- Session recap: ${recapArtifactResult.path}`,
       '',
@@ -98,6 +117,8 @@ export class UebungsmeisterService {
       },
       vocabularyArtifact,
       grammarArtifact,
+      curationArtifact,
+      applicationArtifact,
       correctionArtifact,
       {
         kind: 'session-recap',

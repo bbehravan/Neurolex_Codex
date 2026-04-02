@@ -423,7 +423,7 @@ describe('ClaudianPlugin', () => {
   });
 
   describe('NeuroLex session package', () => {
-    it('writes vocabulary and grammar notes when a session package is generated', async () => {
+    it('writes the Phase 3 session package notes when a session package is generated', async () => {
       await plugin.onload();
 
       await plugin.runNeuroLexSessionPackage();
@@ -431,6 +431,8 @@ describe('ClaudianPlugin', () => {
       const writePaths = (mockApp.vault.adapter.write as jest.Mock).mock.calls.map(([path]) => path);
       expect(writePaths.some((path: string) => path.includes('vocabulary-warmup-'))).toBe(true);
       expect(writePaths.some((path: string) => path.includes('grammar-core-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('curation-brief-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('speaking-application-') || path.includes('writing-application-'))).toBe(true);
       expect(writePaths.some((path: string) => path.includes('session-run-'))).toBe(true);
     });
   });

@@ -116,9 +116,17 @@ Status as of 2026-04-02:
 - Phase 0: complete
 - Phase 1: complete
 - Phase 2: complete
-- Phase 3: next
+- Phase 3: complete
+- Phase 4: next
 - Current recommendation:
-  deepen learner-facing production with `Schreibtrainer`, `Sprechtrainer`, and stronger Lernauftrag adaptation
+  move into voice, dedicated views, and stronger evaluation coverage
+
+### Phase 3 implementation target
+
+- add `Kurator` to frame realistic application scenarios
+- branch the application phase into `Schreibtrainer` or `Sprechtrainer`
+- make application mode and task framing respond directly to Lernauftrag and upcoming-task language
+- ensure `Uebungsmeister` packages the curation brief and application artifact together with the existing session outputs
 
 ### Phase 2 implementation target
 

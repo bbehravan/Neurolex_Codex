@@ -6,10 +6,49 @@ export interface SessionPlanOptions {
   notesFolder?: string;
 }
 
-function buildDefaultPhases(sessionMinutes: number, activeLernauftrag?: string): SessionPhase[] {
-  const applicationObjective = activeLernauftrag
-    ? `Apply today's work to the active Lernauftrag: ${activeLernauftrag}`
-    : 'Use the focus structures in a communicative speaking or writing task.';
+function inferApplicationMode(profile: LearnerProfile): 'writing' | 'speaking' {
+  const activeTaskText = normalizeText(profile.activeLernauftrag);
+  const upcomingTaskText = normalizeText(
+    (profile.upcomingTasks ?? [])
+      .map((task) => [task.title, task.notes].filter(Boolean).join(' '))
+      .join(' ')
+  );
+  const combined = `${activeTaskText} ${upcomingTaskText}`.trim();
+
+  if (/write|email|message|application|letter|text|summary|report/.test(combined)) {
+    return 'writing';
+  }
+
+  return 'speaking';
+}
+
+function buildCurationBrief(profile: LearnerProfile, applicationMode: 'writing' | 'speaking'): string {
+  const activeTask = profile.activeLernauftrag?.trim();
+  const upcomingTask = profile.upcomingTasks?.[0];
+
+  if (activeTask) {
+    const register = /formal|interview|landlord|application/.test(activeTask.toLowerCase()) ? 'formal' : 'everyday';
+    return `${applicationMode === 'writing' ? 'Writing' : 'Speaking'} task in ${register} register: ${activeTask}`;
+  }
+
+  if (upcomingTask) {
+    const register = /formal|interview|application/.test(`${upcomingTask.title} ${upcomingTask.notes ?? ''}`.toLowerCase())
+      ? 'formal'
+      : 'everyday';
+    return `${applicationMode === 'writing' ? 'Writing' : 'Speaking'} task for upcoming event "${upcomingTask.title}" in ${register} register.`;
+  }
+
+  return applicationMode === 'writing'
+    ? 'Write a short realistic text that reuses the focus structures in one coherent situation.'
+    : 'Prepare a short spoken interaction that reuses the focus structures in one coherent situation.';
+}
+
+function buildDefaultPhases(
+  sessionMinutes: number,
+  applicationMode: 'writing' | 'speaking',
+  curationBrief: string
+): SessionPhase[] {
+  const applicationObjective = curationBrief;
 
   const scale = sessionMinutes / 60;
   const warmupMinutes = Math.max(5, Math.round(10 * scale));
@@ -36,7 +75,7 @@ function buildDefaultPhases(sessionMinutes: number, activeLernauftrag?: string):
       key: 'application',
       title: 'Application',
       durationMinutes: applicationMinutes,
-      module: activeLernauftrag ? 'Schreibtrainer' : 'Sprechtrainer',
+      module: applicationMode === 'writing' ? 'Schreibtrainer' : 'Sprechtrainer',
       objective: applicationObjective,
     },
     {
@@ -128,11 +167,16 @@ function analyzeFocusStructure(
   const avoidancePenalty = usageRatio < 0.1 ? 20 : usageRatio < 0.2 ? 10 : 0;
   const diagnosticNoteBoost = diagnosticNote ? 18 : 0;
 
-  const lernauftragText = normalizeText(profile.activeLernauftrag);
+  const taskContextText = normalizeText(
+    [
+      profile.activeLernauftrag,
+      ...(profile.upcomingTasks ?? []).flatMap((task) => [task.title, task.notes]),
+    ].filter(Boolean).join(' ')
+  );
   const lernauftragBoost = (
-    (structureId === 'B5' && /email|request|formal|landlord|interview/.test(lernauftragText))
-    || (structureId === 'B4' && /why|because|reason|explain|interview/.test(lernauftragText))
-    || (structureId === 'B1' && /with|friend|weekend|appointment|mit /.test(lernauftragText))
+    (structureId === 'B5' && /email|request|formal|landlord|interview|application/.test(taskContextText))
+    || (structureId === 'B4' && /why|because|reason|explain|interview|argument/.test(taskContextText))
+    || (structureId === 'B1' && /with|friend|weekend|appointment|mit |colleague|company/.test(taskContextText))
   ) ? 45 : 0;
   const avoidanceSignals = profile.avoidanceSignals ?? [];
   const upcomingTasks = profile.upcomingTasks ?? [];
@@ -218,6 +262,8 @@ export function buildSessionPlan(
   profile: LearnerProfile,
   options: SessionPlanOptions = {}
 ): SessionPlan {
+  const applicationMode = inferApplicationMode(profile);
+  const curationBrief = buildCurationBrief(profile, applicationMode);
   const focusSelections = pickFocusSelections(profile);
   const focusStructures = focusSelections.map((selection) => selection.structureId);
 
@@ -226,9 +272,11 @@ export function buildSessionPlan(
     generatedAt: options.generatedAt ?? new Date().toISOString(),
     aiEngine: profile.aiEngine,
     targetLanguage: profile.targetLanguage,
+    applicationMode,
+    curationBrief,
     focusStructures,
     focusSelections,
     notesFolder: options.notesFolder ?? 'neurolex/',
-    phases: buildDefaultPhases(profile.preferredSessionMinutes, profile.activeLernauftrag),
+    phases: buildDefaultPhases(profile.preferredSessionMinutes, applicationMode, curationBrief),
   };
 }

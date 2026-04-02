@@ -19,13 +19,14 @@ This repo has been bootstrapped from Claudian `1.3.72` and now completes the fir
 - prerequisite-aware session planning
 - recap generation through `Mentor`
 - one end-to-end note-driven session package through `Uebungsmeister`
+- Phase 3 production depth with `Kurator`, `Schreibtrainer`, `Sprechtrainer`, and stronger Lernauftrag-driven adaptation
 
 Current repository priorities:
 
 - preserve the stable Obsidian plugin shell from Claudian
 - rebrand the plugin to NeuroLex
-- deepen the first MVP learning loop before advanced voice and dashboard features
-- move from Phase 2 into richer learner-facing production modules
+- move from the completed MVP core into voice, views, and stronger eval coverage
+- keep the learner-facing production loop grounded in real tasks
 
 ## MVP direction
 

@@ -34,6 +34,8 @@ describe('buildSessionPlan', () => {
       'cooldown',
     ]);
     expect(plan.phases.reduce((sum, phase) => sum + phase.durationMinutes, 0)).toBe(60);
+    expect(plan.applicationMode).toBe('speaking');
+    expect(plan.curationBrief).toContain('spoken interaction');
   });
 
   test('selects high-priority unlocked structures as the focus', () => {
@@ -50,8 +52,10 @@ describe('buildSessionPlan', () => {
       activeLernauftrag: 'Write a formal email to a landlord about a broken heater.',
     });
 
+    expect(plan.applicationMode).toBe('writing');
     expect(plan.phases[2].module).toBe('Schreibtrainer');
-    expect(plan.phases[2].objective).toContain('Lernauftrag');
+    expect(plan.phases[2].objective).toContain('Writing task');
+    expect(plan.curationBrief).toContain('formal');
   });
 
   test('lets a Lernauftrag boost relevant focus structures', () => {
@@ -147,9 +151,27 @@ describe('buildSessionPlan', () => {
       },
     });
 
-    expect(plan.focusStructures).toContain('C1');
-    expect(plan.focusSelections.find((selection) => selection.structureId === 'C1')?.reasons.join(' '))
-      .toContain('Low current mastery');
+    expect(plan.focusStructures).toContain('B5');
+    expect(plan.focusSelections.find((selection) => selection.structureId === 'B5')?.reasons.join(' '))
+      .toContain('Supports upcoming task: Job interview');
+  });
+
+  test('uses upcoming task language to adapt the application mode and brief', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      upcomingTasks: [
+        {
+          title: 'Job application email',
+          deadline: '2026-04-10',
+          structures: ['B4', 'B5'],
+          notes: 'formal cover email',
+        },
+      ],
+    });
+
+    expect(plan.applicationMode).toBe('writing');
+    expect(plan.curationBrief).toContain('Job application email');
+    expect(plan.phases[2].module).toBe('Schreibtrainer');
   });
 
   test('turns flagged avoidance into exercise recommendations', () => {

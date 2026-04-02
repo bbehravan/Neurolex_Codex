@@ -66,6 +66,8 @@ export interface SessionPlan {
   generatedAt: string;
   aiEngine: AiEngine;
   targetLanguage: string;
+  applicationMode: 'writing' | 'speaking';
+  curationBrief: string;
   focusStructures: string[];
   focusSelections: SessionFocusSelection[];
   notesFolder: string;
@@ -84,7 +86,16 @@ export interface SessionSummary {
 }
 
 export interface SessionArtifact {
-  kind: 'session-plan' | 'warmup-vocabulary' | 'grammar-core' | 'correction-guide' | 'session-recap' | 'session-run';
+  kind:
+    | 'session-plan'
+    | 'warmup-vocabulary'
+    | 'grammar-core'
+    | 'curation-brief'
+    | 'writing-application'
+    | 'speaking-application'
+    | 'correction-guide'
+    | 'session-recap'
+    | 'session-run';
   path: string;
   content: string;
 }
