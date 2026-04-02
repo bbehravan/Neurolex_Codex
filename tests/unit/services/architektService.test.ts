@@ -8,8 +8,24 @@ const profile: LearnerProfile = {
   nativeLanguage: 'English',
   currentLevel: 'B1',
   preferredSessionMinutes: 60,
-  avoidanceSignals: [],
-  upcomingTasks: [],
+  activeLernauftrag: 'Explain reasons clearly in a job interview.',
+  avoidanceSignals: [
+    { structureId: 'B4', status: 'flagged', note: 'avoids subordinate clauses in speech' },
+    { structureId: 'C1', status: 'monitoring', note: 'not relevant yet' },
+  ],
+  upcomingTasks: [
+    {
+      title: 'Job interview',
+      deadline: '2026-04-10',
+      structures: ['B4', 'B5'],
+      notes: 'formal answers',
+    },
+    {
+      title: 'Weekend chat',
+      structures: ['B1'],
+      notes: 'casual conversation',
+    },
+  ],
   grammarProgress: {
     A1: { structureId: 'A1', masteryPercent: 75, freeProductionAccuracy: 70, opportunities: 12, uses: 8 },
     A2: { structureId: 'A2', masteryPercent: 80, freeProductionAccuracy: 78, opportunities: 15, uses: 10 },
@@ -37,5 +53,10 @@ describe('ArchitektService', () => {
     expect(artifact.content).toContain('- B4');
     expect(artifact.content).toContain('## Focus Rationale');
     expect(artifact.content).toContain('B1 (Dative Case)');
+    expect(artifact.content).toContain('## Diagnostics Context');
+    expect(artifact.content).toContain('Active Lernauftrag: Explain reasons clearly in a job interview.');
+    expect(artifact.content).toContain('Avoidance signal: B4 is flagged');
+    expect(artifact.content).toContain('Upcoming task: Job interview');
+    expect(artifact.content).toContain('Upcoming task: Weekend chat');
   });
 });

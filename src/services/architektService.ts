@@ -6,6 +6,43 @@ function normalizeNotesRoot(notesFolder: string): string {
   return trimmed ? `${trimmed}/` : 'neurolex/';
 }
 
+function formatDiagnosticsContext(profile: LearnerProfile, focusStructures: string[]): string {
+  const focusSet = new Set(focusStructures);
+  const relevantAvoidanceSignals = profile.avoidanceSignals
+    .filter((signal) => focusSet.has(signal.structureId));
+  const relevantUpcomingTasks = profile.upcomingTasks
+    .filter((task) => task.structures.some((structureId) => focusSet.has(structureId)));
+
+  const diagnostics: string[] = [
+    `- Active Lernauftrag: ${profile.activeLernauftrag || 'none'}`,
+  ];
+
+  if (relevantAvoidanceSignals.length > 0) {
+    diagnostics.push(
+      ...relevantAvoidanceSignals.map((signal) =>
+        `- Avoidance signal: ${signal.structureId} is ${signal.status}${signal.note ? ` (${signal.note})` : ''}`
+      )
+    );
+  } else {
+    diagnostics.push('- Avoidance signals tied to this plan: none');
+  }
+
+  if (relevantUpcomingTasks.length > 0) {
+    diagnostics.push(
+      ...relevantUpcomingTasks.map((task) => {
+        const relevantStructures = task.structures.filter((structureId) => focusSet.has(structureId));
+        const deadline = task.deadline ? ` | deadline: ${task.deadline}` : '';
+        const notes = task.notes ? ` | notes: ${task.notes}` : '';
+        return `- Upcoming task: ${task.title}${deadline} | relevant structures: ${relevantStructures.join(', ')}${notes}`;
+      })
+    );
+  } else {
+    diagnostics.push('- Upcoming tasks tied to this plan: none');
+  }
+
+  return diagnostics.join('\n');
+}
+
 export class ArchitektService {
   constructor(private readonly notesFolder: string) {}
 
@@ -45,6 +82,7 @@ export class ArchitektService {
         return `- ${selection.structureId} (${selection.title})\n${reasons}`;
       }).join('\n')
       : '- No focus rationale available.';
+    const diagnosticsContext = formatDiagnosticsContext(profile, plan.focusStructures);
 
     const content = [
       '---',
@@ -64,6 +102,9 @@ export class ArchitektService {
       '',
       '## Focus Rationale',
       focusRationale,
+      '',
+      '## Diagnostics Context',
+      diagnosticsContext,
       '',
       phases,
       '',
