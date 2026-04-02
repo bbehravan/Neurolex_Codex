@@ -79,7 +79,10 @@ export class ArchitektService {
     const focusRationale = plan.focusSelections.length > 0
       ? plan.focusSelections.map((selection) => {
         const reasons = selection.reasons.map((reason) => `  - ${reason}`).join('\n');
-        return `- ${selection.structureId} (${selection.title})\n${reasons}`;
+        const recommendations = selection.exerciseRecommendations.length > 0
+          ? `  - Recommended practice:\n${selection.exerciseRecommendations.map((recommendation) => `    - ${recommendation}`).join('\n')}`
+          : '';
+        return `- ${selection.structureId} (${selection.title})\n${reasons}${recommendations ? `\n${recommendations}` : ''}`;
       }).join('\n')
       : '- No focus rationale available.';
     const diagnosticsContext = formatDiagnosticsContext(profile, plan.focusStructures);

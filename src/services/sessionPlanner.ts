@@ -56,6 +56,54 @@ function normalizeText(value: string | undefined): string {
 interface FocusDiagnostics {
   score: number;
   reasons: string[];
+  exerciseRecommendations: string[];
+}
+
+function pushUnique(target: string[], value: string): void {
+  if (!target.includes(value)) {
+    target.push(value);
+  }
+}
+
+function buildExerciseRecommendations(
+  profile: LearnerProfile,
+  structureId: string
+): string[] {
+  const structure = getGrammarStructure(structureId);
+  const progress = profile.grammarProgress[structureId];
+  const diagnosticNote = normalizeText(progress?.diagnosticNote);
+  const freeProductionAccuracy = progress?.freeProductionAccuracy ?? 0;
+  const usageRatio = progress && progress.opportunities > 0 ? progress.uses / progress.opportunities : 0;
+  const avoidanceSignal = (profile.avoidanceSignals ?? []).find((signal) => signal.structureId === structureId);
+  const taskMatch = (profile.upcomingTasks ?? []).find((task) => task.structures.includes(structureId));
+  const recommendations: string[] = [];
+
+  if (/word order|verb-final|verb final|subordinate clause/.test(diagnosticNote) || structureId === 'B4') {
+    pushUnique(recommendations, 'Build clause frames from chunks and force the finite verb to the sentence-final slot before free production.');
+  }
+  if (/pressure|speech|spoken|under pressure/.test(diagnosticNote)) {
+    pushUnique(recommendations, 'Run timed speaking reps, then repeat the same idea once more slowly with self-correction.');
+  }
+  if (/request|polite|direct command/.test(diagnosticNote) || structureId === 'B5') {
+    pushUnique(recommendations, 'Rewrite blunt requests into softer Konjunktiv II forms before a short role-play.');
+  }
+  if (/case|dative|article|preposition/.test(diagnosticNote) || structureId === 'B1' || structureId === 'B2' || structureId === 'B6') {
+    pushUnique(recommendations, 'Use short substitution drills that swap articles, pronouns, or prepositions inside the same sentence frame.');
+  }
+  if (avoidanceSignal?.status === 'flagged' || usageRatio < 0.1) {
+    pushUnique(recommendations, 'Start with low-stakes retrieval and one constrained output before asking for open-ended production.');
+  }
+  if (freeProductionAccuracy < 50) {
+    pushUnique(recommendations, 'Finish with a short free-production task that requires at least three correct uses of the target structure.');
+  }
+  if (taskMatch) {
+    pushUnique(recommendations, `Rehearse the structure inside the upcoming task "${taskMatch.title}".`);
+  }
+  if (recommendations.length === 0) {
+    pushUnique(recommendations, `Use a guided practice cycle based on ${structure.summary.toLowerCase()}.`);
+  }
+
+  return recommendations.slice(0, 3);
 }
 
 function analyzeFocusStructure(
@@ -128,6 +176,7 @@ function analyzeFocusStructure(
   return {
     score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + avoidanceSignalBoost + lernauftragBoost + taskBoost + diagnosticNoteBoost,
     reasons,
+    exerciseRecommendations: buildExerciseRecommendations(profile, structureId),
   };
 }
 
@@ -154,11 +203,15 @@ function pickFocusSelections(profile: LearnerProfile): SessionFocusSelection[] {
       return left.id.localeCompare(right.id);
     })
     .slice(0, 2)
-    .map((structure) => ({
-      structureId: structure.id,
-      title: structure.title,
-      reasons: analyzeFocusStructure(profile, structure.id).reasons,
-    }));
+    .map((structure) => {
+      const diagnostics = analyzeFocusStructure(profile, structure.id);
+      return {
+        structureId: structure.id,
+        title: structure.title,
+        reasons: diagnostics.reasons,
+        exerciseRecommendations: diagnostics.exerciseRecommendations,
+      };
+    });
 }
 
 export function buildSessionPlan(

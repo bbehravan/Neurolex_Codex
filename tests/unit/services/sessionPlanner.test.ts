@@ -41,6 +41,7 @@ describe('buildSessionPlan', () => {
     expect(plan.focusStructures).toEqual(['B1', 'B4']);
     expect(plan.focusSelections[0].structureId).toBe('B1');
     expect(plan.focusSelections[0].reasons.join(' ')).toContain('Low current mastery');
+    expect(plan.focusSelections[0].exerciseRecommendations.length).toBeGreaterThan(0);
   });
 
   test('switches application toward writing when a Lernauftrag is active', () => {
@@ -100,8 +101,15 @@ describe('buildSessionPlan', () => {
     });
 
     expect(plan.focusStructures).toContain('B4');
-    expect(plan.focusSelections.find((selection) => selection.structureId === 'B4')?.reasons.join(' '))
-      .toContain('Observed pattern: verb-final word order breaks under pressure');
+    const selection = plan.focusSelections.find((focusSelection) => focusSelection.structureId === 'B4');
+
+    expect(selection?.reasons.join(' ')).toContain('Observed pattern: verb-final word order breaks under pressure');
+    expect(selection?.exerciseRecommendations).toContain(
+      'Build clause frames from chunks and force the finite verb to the sentence-final slot before free production.'
+    );
+    expect(selection?.exerciseRecommendations).toContain(
+      'Run timed speaking reps, then repeat the same idea once more slowly with self-correction.'
+    );
   });
 
   test('prioritizes explicitly flagged avoidance targets', () => {
@@ -142,5 +150,23 @@ describe('buildSessionPlan', () => {
     expect(plan.focusStructures).toContain('C1');
     expect(plan.focusSelections.find((selection) => selection.structureId === 'C1')?.reasons.join(' '))
       .toContain('Low current mastery');
+  });
+
+  test('turns flagged avoidance into exercise recommendations', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      avoidanceSignals: [
+        { structureId: 'B4', status: 'flagged', note: 'avoids subordinate clauses in speech' },
+      ],
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B4: { structureId: 'B4', masteryPercent: 34, freeProductionAccuracy: 30, opportunities: 10, uses: 0 },
+      },
+    });
+
+    const selection = plan.focusSelections.find((focusSelection) => focusSelection.structureId === 'B4');
+    expect(selection?.exerciseRecommendations).toContain(
+      'Start with low-stakes retrieval and one constrained output before asking for open-ended production.'
+    );
   });
 });

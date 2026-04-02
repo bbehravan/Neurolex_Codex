@@ -58,6 +58,7 @@ export interface SessionFocusSelection {
   structureId: string;
   title: string;
   reasons: string[];
+  exerciseRecommendations: string[];
 }
 
 export interface SessionPlan {

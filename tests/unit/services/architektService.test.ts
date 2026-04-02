@@ -66,5 +66,7 @@ describe('ArchitektService', () => {
     expect(artifact.content).toContain('Upcoming task: Job interview');
     expect(artifact.content).toContain('Upcoming task: Weekend chat');
     expect(artifact.content).toContain('Observed pattern: verb-final word order breaks under pressure');
+    expect(artifact.content).toContain('Recommended practice:');
+    expect(artifact.content).toContain('Build clause frames from chunks and force the finite verb to the sentence-final slot before free production.');
   });
 });
