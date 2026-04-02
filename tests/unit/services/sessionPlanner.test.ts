@@ -1,5 +1,5 @@
-import { buildSessionPlan } from '@/services/sessionPlanner';
 import type { LearnerProfile } from '@/domain/types';
+import { buildSessionPlan } from '@/services/sessionPlanner';
 
 const baseProfile: LearnerProfile = {
   learnerId: 'learner-1',

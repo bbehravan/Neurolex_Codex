@@ -1,5 +1,5 @@
-import { listGrammarStructures } from '../domain/grammarGraph';
 import type { VaultFileAdapter } from '../core/storage/VaultFileAdapter';
+import { listGrammarStructures } from '../domain/grammarGraph';
 import type { GrammarProgress, LearnerProfile } from '../domain/types';
 import { buildSeedLearnerProfile } from './learnerProfileSeed';
 

@@ -36,12 +36,12 @@ import {
   normalizeVisibleModelVariant,
   VIEW_TYPE_CLAUDIAN,
 } from './core/types';
-import { ArchitektService } from './services/architektService';
-import { DiagnostikerService } from './services/diagnostikerService';
 import { ClaudianView } from './features/chat/ClaudianView';
 import { type InlineEditContext, InlineEditModal } from './features/inline-edit/ui/InlineEditModal';
 import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
 import { setLocale } from './i18n';
+import { ArchitektService } from './services/architektService';
+import { DiagnostikerService } from './services/diagnostikerService';
 import { ClaudeCliResolver } from './utils/claudeCli';
 import { buildCursorContext } from './utils/editor';
 import { getCurrentModelFromEnvironment, getModelsFromEnvironment, parseEnvironmentVariables } from './utils/env';

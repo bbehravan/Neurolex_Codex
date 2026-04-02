@@ -2,8 +2,8 @@
  * Settings type definitions.
  */
 
-import type { Locale } from '../../i18n/types';
 import type { AiEngine } from '../../domain/types';
+import type { Locale } from '../../i18n/types';
 import type { ClaudeModel, EffortLevel, ThinkingBudget } from './models';
 
 const UNIX_BLOCKED_COMMANDS = [
