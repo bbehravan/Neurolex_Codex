@@ -3,6 +3,7 @@
  */
 
 import type { Locale } from '../../i18n/types';
+import type { AiEngine } from '../../domain/types';
 import type { ClaudeModel, EffortLevel, ThinkingBudget } from './models';
 
 const UNIX_BLOCKED_COMMANDS = [
@@ -236,6 +237,14 @@ export type TabBarPosition = 'input' | 'header';
 export interface ClaudianSettings {
   // User preferences
   userName: string;
+  aiEngine: AiEngine;
+  neurolexTargetLanguage: string;
+  neurolexNativeLanguage: string;
+  neurolexLearnerLevel: string;
+  neurolexSessionDurationMinutes: number;
+  neurolexNotesFolder: string;
+  neurolexMongoConnection: string;
+  neurolexVoyageServer: string;
 
   // Security (Claudian-specific, CC uses permissions.deny instead)
   enableBlocklist: boolean;
@@ -305,6 +314,14 @@ export interface ClaudianSettings {
 export const DEFAULT_SETTINGS: ClaudianSettings = {
   // User preferences
   userName: '',
+  aiEngine: 'claude-code',
+  neurolexTargetLanguage: 'German',
+  neurolexNativeLanguage: 'English',
+  neurolexLearnerLevel: 'B1',
+  neurolexSessionDurationMinutes: 60,
+  neurolexNotesFolder: 'neurolex/',
+  neurolexMongoConnection: 'mongodb://localhost:27017/neurolex',
+  neurolexVoyageServer: 'auto-detect',
 
   // Security
   enableBlocklist: true,

@@ -117,6 +117,118 @@ export class ClaudianSettingTab extends PluginSettingTab {
           });
       });
 
+    new Setting(containerEl).setName('NeuroLex').setHeading();
+
+    new Setting(containerEl)
+      .setName('AI engine')
+      .setDesc('Choose which CLI backend NeuroLex should plan around.')
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption('claude-code', 'Claude Code CLI')
+          .addOption('codex', 'Codex CLI')
+          .setValue(this.plugin.settings.aiEngine)
+          .onChange(async (value: 'claude-code' | 'codex') => {
+            this.plugin.settings.aiEngine = value;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Target language')
+      .setDesc('The language NeuroLex should teach.')
+      .addText((text) => {
+        text
+          .setPlaceholder('German')
+          .setValue(this.plugin.settings.neurolexTargetLanguage)
+          .onChange(async (value) => {
+            this.plugin.settings.neurolexTargetLanguage = value.trim() || 'German';
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Native language')
+      .setDesc('Fallback language for explanations and diagnostics.')
+      .addText((text) => {
+        text
+          .setPlaceholder('English')
+          .setValue(this.plugin.settings.neurolexNativeLanguage)
+          .onChange(async (value) => {
+            this.plugin.settings.neurolexNativeLanguage = value.trim() || 'English';
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Learner level')
+      .setDesc('Used to seed the early planner before calibration exists.')
+      .addText((text) => {
+        text
+          .setPlaceholder('B1')
+          .setValue(this.plugin.settings.neurolexLearnerLevel)
+          .onChange(async (value) => {
+            this.plugin.settings.neurolexLearnerLevel = value.trim().toUpperCase() || 'B1';
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Session duration')
+      .setDesc('Default duration in minutes for NeuroLex sessions.')
+      .addText((text) => {
+        text
+          .setPlaceholder('60')
+          .setValue(String(this.plugin.settings.neurolexSessionDurationMinutes))
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10);
+            this.plugin.settings.neurolexSessionDurationMinutes = Number.isFinite(parsed) && parsed > 0
+              ? parsed
+              : 60;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Notes folder')
+      .setDesc('Root vault folder for NeuroLex-generated notes.')
+      .addText((text) => {
+        text
+          .setPlaceholder('neurolex/')
+          .setValue(this.plugin.settings.neurolexNotesFolder)
+          .onChange(async (value) => {
+            const trimmed = value.trim();
+            this.plugin.settings.neurolexNotesFolder = trimmed ? trimmed.replace(/^\/+|\/+$/g, '') + '/' : 'neurolex/';
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('MongoDB connection')
+      .setDesc('Planned learner-state backend endpoint.')
+      .addText((text) => {
+        text
+          .setPlaceholder('mongodb://localhost:27017/neurolex')
+          .setValue(this.plugin.settings.neurolexMongoConnection)
+          .onChange(async (value) => {
+            this.plugin.settings.neurolexMongoConnection = value.trim() || 'mongodb://localhost:27017/neurolex';
+            await this.plugin.saveSettings();
+          });
+        text.inputEl.addClass('claudian-settings-media-input');
+      });
+
+    new Setting(containerEl)
+      .setName('Voyage MCP server')
+      .setDesc('MCP endpoint label for embeddings and coverage analysis.')
+      .addText((text) => {
+        text
+          .setPlaceholder('auto-detect')
+          .setValue(this.plugin.settings.neurolexVoyageServer)
+          .onChange(async (value) => {
+            this.plugin.settings.neurolexVoyageServer = value.trim() || 'auto-detect';
+            await this.plugin.saveSettings();
+          });
+      });
+
     new Setting(containerEl).setName(t('settings.customization')).setHeading();
 
     new Setting(containerEl)

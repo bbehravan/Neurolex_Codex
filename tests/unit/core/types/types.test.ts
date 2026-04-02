@@ -99,6 +99,14 @@ describe('types.ts', () => {
     it('should be assignable with valid settings', () => {
       const settings: ClaudianSettings = {
         userName: '',
+        aiEngine: 'claude-code',
+        neurolexTargetLanguage: 'German',
+        neurolexNativeLanguage: 'English',
+        neurolexLearnerLevel: 'B1',
+        neurolexSessionDurationMinutes: 60,
+        neurolexNotesFolder: 'neurolex/',
+        neurolexMongoConnection: 'mongodb://localhost:27017/neurolex',
+        neurolexVoyageServer: 'auto-detect',
         enableBlocklist: false,
         allowExternalAccess: false,
         blockedCommands: { unix: ['test'], windows: ['test-win'] },
@@ -141,6 +149,14 @@ describe('types.ts', () => {
     it('should accept custom model strings', () => {
       const settings: ClaudianSettings = {
         userName: '',
+        aiEngine: 'codex',
+        neurolexTargetLanguage: 'German',
+        neurolexNativeLanguage: 'English',
+        neurolexLearnerLevel: 'B1',
+        neurolexSessionDurationMinutes: 60,
+        neurolexNotesFolder: 'neurolex/',
+        neurolexMongoConnection: 'mongodb://localhost:27017/neurolex',
+        neurolexVoyageServer: 'auto-detect',
         enableBlocklist: true,
         allowExternalAccess: false,
         blockedCommands: { unix: [], windows: [] },
@@ -181,6 +197,14 @@ describe('types.ts', () => {
     it('should accept optional lastClaudeModel and lastCustomModel', () => {
       const settings: ClaudianSettings = {
         userName: '',
+        aiEngine: 'claude-code',
+        neurolexTargetLanguage: 'German',
+        neurolexNativeLanguage: 'English',
+        neurolexLearnerLevel: 'B1',
+        neurolexSessionDurationMinutes: 60,
+        neurolexNotesFolder: 'neurolex/',
+        neurolexMongoConnection: 'mongodb://localhost:27017/neurolex',
+        neurolexVoyageServer: 'auto-detect',
         enableBlocklist: true,
         allowExternalAccess: false,
         blockedCommands: { unix: [], windows: [] },
