@@ -33,5 +33,7 @@ describe('ArchitektService', () => {
     expect(artifact.content).toContain('# NeuroLex Session Plan');
     expect(artifact.content).toContain('- B1');
     expect(artifact.content).toContain('- B4');
+    expect(artifact.content).toContain('## Focus Rationale');
+    expect(artifact.content).toContain('B1 (Dative Case)');
   });
 });

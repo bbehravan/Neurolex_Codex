@@ -38,12 +38,19 @@ export interface SessionPhase {
   objective: string;
 }
 
+export interface SessionFocusSelection {
+  structureId: string;
+  title: string;
+  reasons: string[];
+}
+
 export interface SessionPlan {
   learnerId: string;
   generatedAt: string;
   aiEngine: AiEngine;
   targetLanguage: string;
   focusStructures: string[];
+  focusSelections: SessionFocusSelection[];
   notesFolder: string;
   phases: SessionPhase[];
 }

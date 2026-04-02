@@ -39,6 +39,12 @@ export class ArchitektService {
     const focusStructures = plan.focusStructures.length > 0
       ? plan.focusStructures.map((structureId) => `- ${structureId}`).join('\n')
       : '- Calibration needed';
+    const focusRationale = plan.focusSelections.length > 0
+      ? plan.focusSelections.map((selection) => {
+        const reasons = selection.reasons.map((reason) => `  - ${reason}`).join('\n');
+        return `- ${selection.structureId} (${selection.title})\n${reasons}`;
+      }).join('\n')
+      : '- No focus rationale available.';
 
     const content = [
       '---',
@@ -55,6 +61,9 @@ export class ArchitektService {
       '',
       '## Focus Structures',
       focusStructures,
+      '',
+      '## Focus Rationale',
+      focusRationale,
       '',
       phases,
       '',

@@ -37,6 +37,8 @@ describe('buildSessionPlan', () => {
   test('selects high-priority unlocked structures as the focus', () => {
     const plan = buildSessionPlan(baseProfile);
     expect(plan.focusStructures).toEqual(['B1', 'B4']);
+    expect(plan.focusSelections[0].structureId).toBe('B1');
+    expect(plan.focusSelections[0].reasons.join(' ')).toContain('Low current mastery');
   });
 
   test('switches application toward writing when a Lernauftrag is active', () => {
@@ -61,6 +63,8 @@ describe('buildSessionPlan', () => {
     });
 
     expect(plan.focusStructures).toContain('B5');
+    expect(plan.focusSelections.find((selection) => selection.structureId === 'B5')?.reasons.join(' '))
+      .toContain('active Lernauftrag');
   });
 
   test('prioritizes weak productive control over mere unlocked ordering', () => {

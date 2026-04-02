@@ -1,5 +1,5 @@
 import { getGrammarStructure, getNextPriorityStructures } from '../domain/grammarGraph';
-import type { LearnerProfile, SessionPhase, SessionPlan } from '../domain/types';
+import type { LearnerProfile, SessionFocusSelection, SessionPhase, SessionPlan } from '../domain/types';
 
 export interface SessionPlanOptions {
   generatedAt?: string;
@@ -53,10 +53,15 @@ function normalizeText(value: string | undefined): string {
   return (value ?? '').trim().toLowerCase();
 }
 
-function scoreFocusStructure(
+interface FocusDiagnostics {
+  score: number;
+  reasons: string[];
+}
+
+function analyzeFocusStructure(
   profile: LearnerProfile,
   structureId: string
-): number {
+): FocusDiagnostics {
   const structure = getGrammarStructure(structureId);
   const progress = profile.grammarProgress[structureId];
   const mastery = progress?.masteryPercent ?? 0;
@@ -80,10 +85,32 @@ function scoreFocusStructure(
     || (structureId === 'B1' && /with|friend|weekend|appointment|mit /.test(lernauftragText))
   ) ? 45 : 0;
 
-  return priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + lernauftragBoost;
+  const reasons: string[] = [];
+  if (structure.priority === 'highest' || structure.priority === 'high') {
+    reasons.push(`High communicative impact (${structure.priority} priority).`);
+  }
+  if (mastery < 65) {
+    reasons.push(`Low current mastery (${mastery}%).`);
+  }
+  if (freeProductionAccuracy < 65) {
+    reasons.push(`Weak free-production accuracy (${freeProductionAccuracy}%).`);
+  }
+  if (usageRatio < 0.1) {
+    reasons.push('Strong avoidance signal in recent usage.');
+  } else if (usageRatio < 0.2) {
+    reasons.push('Usage is low enough to monitor for avoidance.');
+  }
+  if (lernauftragBoost > 0) {
+    reasons.push('Directly supports the active Lernauftrag.');
+  }
+
+  return {
+    score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + lernauftragBoost,
+    reasons,
+  };
 }
 
-function pickFocusStructures(profile: LearnerProfile): string[] {
+function pickFocusSelections(profile: LearnerProfile): SessionFocusSelection[] {
   const masteryById = Object.fromEntries(
     Object.entries(profile.grammarProgress).map(([structureId, progress]) => [
       structureId,
@@ -95,7 +122,7 @@ function pickFocusStructures(profile: LearnerProfile): string[] {
 
   return unlocked
     .sort((left, right) => {
-      const scoreDelta = scoreFocusStructure(profile, right.id) - scoreFocusStructure(profile, left.id);
+      const scoreDelta = analyzeFocusStructure(profile, right.id).score - analyzeFocusStructure(profile, left.id).score;
       if (scoreDelta !== 0) return scoreDelta;
 
       const leftProgress = profile.grammarProgress[left.id];
@@ -106,14 +133,19 @@ function pickFocusStructures(profile: LearnerProfile): string[] {
       return left.id.localeCompare(right.id);
     })
     .slice(0, 2)
-    .map((structure) => structure.id);
+    .map((structure) => ({
+      structureId: structure.id,
+      title: structure.title,
+      reasons: analyzeFocusStructure(profile, structure.id).reasons,
+    }));
 }
 
 export function buildSessionPlan(
   profile: LearnerProfile,
   options: SessionPlanOptions = {}
 ): SessionPlan {
-  const focusStructures = pickFocusStructures(profile);
+  const focusSelections = pickFocusSelections(profile);
+  const focusStructures = focusSelections.map((selection) => selection.structureId);
 
   return {
     learnerId: profile.learnerId,
@@ -121,6 +153,7 @@ export function buildSessionPlan(
     aiEngine: profile.aiEngine,
     targetLanguage: profile.targetLanguage,
     focusStructures,
+    focusSelections,
     notesFolder: options.notesFolder ?? 'neurolex/',
     phases: buildDefaultPhases(profile.preferredSessionMinutes, profile.activeLernauftrag),
   };
