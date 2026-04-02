@@ -96,6 +96,16 @@ describe('ClaudianPlugin', () => {
       });
     });
 
+    it('should add command to generate a NeuroLex session recap note', async () => {
+      await plugin.onload();
+
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'generate-neurolex-session-recap',
+        name: 'Generate NeuroLex session recap note',
+        callback: expect.any(Function),
+      });
+    });
+
     it('should migrate legacy cli path to hostname-based paths and clear old field', async () => {
       const legacyPath = '/legacy/claude';
       mockApp.vault.adapter.exists.mockImplementation(async (path: string) => {

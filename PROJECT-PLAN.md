@@ -109,6 +109,16 @@ The full vision is ambitious. To reduce delivery risk, the first MVP should prov
 
 ## Delivery Phases
 
+## Current Status
+
+Status as of 2026-04-02:
+
+- Phase 0: complete
+- Phase 1: complete
+- Phase 2: next
+- Current recommendation:
+  build the first end-to-end session flow with `Wortmeister`, `Grammatiktrainer`, `Korrektor`, and `Uebungsmeister`
+
 ## Phase 0: Bootstrap
 
 - fork Claudian into this repo

@@ -42,6 +42,7 @@ import { ClaudianSettingTab } from './features/settings/ClaudianSettings';
 import { setLocale } from './i18n';
 import { ArchitektService } from './services/architektService';
 import { DiagnostikerService } from './services/diagnostikerService';
+import { MentorService } from './services/mentorService';
 import { ClaudeCliResolver } from './utils/claudeCli';
 import { buildCursorContext } from './utils/editor';
 import { getCurrentModelFromEnvironment, getModelsFromEnvironment, parseEnvironmentVariables } from './utils/env';
@@ -239,6 +240,14 @@ export default class ClaudianPlugin extends Plugin {
       name: 'Generate NeuroLex session plan note',
       callback: async () => {
         await this.generateNeuroLexSessionPlanNote();
+      },
+    });
+
+    this.addCommand({
+      id: 'generate-neurolex-session-recap',
+      name: 'Generate NeuroLex session recap note',
+      callback: async () => {
+        await this.generateNeuroLexSessionRecapNote();
       },
     });
 
@@ -651,6 +660,18 @@ export default class ClaudianPlugin extends Plugin {
     const { path, content } = architekt.buildSessionPlanArtifact(profile);
     await vault.write(path, content);
     new Notice(`NeuroLex session plan saved to ${path}`);
+  }
+
+  async generateNeuroLexSessionRecapNote(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    const architekt = new ArchitektService(this.getNeuroLexNotesRoot());
+    const plan = architekt.buildPlan(profile);
+    const mentor = new MentorService(this.getNeuroLexNotesRoot());
+    const { path, content } = mentor.buildSessionRecapArtifact(profile, plan);
+    await vault.write(path, content);
+    new Notice(`NeuroLex session recap saved to ${path}`);
   }
 
   /** Updates and persists environment variables, restarting processes to apply changes. */

@@ -71,3 +71,14 @@ export interface SessionPlan {
   notesFolder: string;
   phases: SessionPhase[];
 }
+
+export interface SessionSummary {
+  learnerId: string;
+  generatedAt: string;
+  targetLanguage: string;
+  focusStructures: string[];
+  wins: string[];
+  watchItems: string[];
+  nextActions: string[];
+  reflectionPrompt: string;
+}
