@@ -47,6 +47,7 @@ describe('UebungsmeisterService', () => {
 
     expect(sessionRun.sessionId).toBe('session-2026-04-02T12-00-00.000Z');
     expect(sessionRun.plan.applicationMode).toBe('speaking');
+    expect(sessionRun.evaluation?.completenessScore).toBeGreaterThan(0);
     expect(sessionRun.artifacts.map((artifact) => artifact.kind)).toEqual([
       'session-plan',
       'warmup-vocabulary',
@@ -55,6 +56,8 @@ describe('UebungsmeisterService', () => {
       'speaking-application',
       'correction-guide',
       'session-recap',
+      'voice-guide',
+      'session-eval',
       'session-run',
     ]);
     expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'warmup-vocabulary')?.path)
@@ -65,7 +68,11 @@ describe('UebungsmeisterService', () => {
       .toContain('curation-brief-2026-04-02T12-00-00.000Z.md');
     expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'speaking-application')?.path)
       .toContain('speaking-application-2026-04-02T12-00-00.000Z.md');
+    expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'voice-guide')?.path)
+      .toContain('voice-guide-2026-04-02T12-00-00.000Z.md');
+    expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'session-eval')?.path)
+      .toContain('session-eval-2026-04-02T12-00-00.000Z.md');
     expect(sessionRun.artifacts.find((artifact) => artifact.kind === 'session-run')?.content)
-      .toContain('## Lernauftrag Adaptation');
+      .toContain('## Evaluation');
   });
 });

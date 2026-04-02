@@ -3,6 +3,7 @@ import * as os from 'os';
 import { TOOL_SUBAGENT } from '@/core/tools';
 import { DEFAULT_SETTINGS, VIEW_TYPE_CLAUDIAN } from '@/core/types';
 import * as sdkSession from '@/utils/sdkSession';
+import { VIEW_TYPE_NEUROLEX_GRAMMAR_GRAPH, VIEW_TYPE_NEUROLEX_SESSION } from '@/views/constants';
 
 // Mock fs for ClaudianService
 jest.mock('fs');
@@ -76,6 +77,39 @@ describe('ClaudianPlugin', () => {
       );
     });
 
+    it('should register the NeuroLex session and grammar graph views', async () => {
+      await plugin.onload();
+
+      expect((plugin.registerView as jest.Mock)).toHaveBeenCalledWith(
+        VIEW_TYPE_NEUROLEX_SESSION,
+        expect.any(Function)
+      );
+      expect((plugin.registerView as jest.Mock)).toHaveBeenCalledWith(
+        VIEW_TYPE_NEUROLEX_GRAMMAR_GRAPH,
+        expect.any(Function)
+      );
+    });
+
+    it('should add commands for the NeuroLex session view, grammar graph view, and spoken recap', async () => {
+      await plugin.onload();
+
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'open-neurolex-session-view',
+        name: 'Open NeuroLex session view',
+        callback: expect.any(Function),
+      });
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'open-neurolex-grammar-graph-view',
+        name: 'Open NeuroLex grammar graph view',
+        callback: expect.any(Function),
+      });
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'speak-neurolex-session-recap',
+        name: 'Speak NeuroLex session recap',
+        callback: expect.any(Function),
+      });
+    });
+
     it('should add ribbon icon', async () => {
       await plugin.onload();
 
@@ -112,6 +146,26 @@ describe('ClaudianPlugin', () => {
       expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
         id: 'run-neurolex-session',
         name: 'Run NeuroLex session package',
+        callback: expect.any(Function),
+      });
+    });
+
+    it('should add commands for NeuroLex views and spoken recap', async () => {
+      await plugin.onload();
+
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'open-neurolex-session-view',
+        name: 'Open NeuroLex session view',
+        callback: expect.any(Function),
+      });
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'open-neurolex-grammar-graph-view',
+        name: 'Open NeuroLex grammar graph view',
+        callback: expect.any(Function),
+      });
+      expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
+        id: 'speak-neurolex-session-recap',
+        name: 'Speak NeuroLex session recap',
         callback: expect.any(Function),
       });
     });
@@ -433,6 +487,8 @@ describe('ClaudianPlugin', () => {
       expect(writePaths.some((path: string) => path.includes('grammar-core-'))).toBe(true);
       expect(writePaths.some((path: string) => path.includes('curation-brief-'))).toBe(true);
       expect(writePaths.some((path: string) => path.includes('speaking-application-') || path.includes('writing-application-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('voice-guide-'))).toBe(true);
+      expect(writePaths.some((path: string) => path.includes('session-eval-'))).toBe(true);
       expect(writePaths.some((path: string) => path.includes('session-run-'))).toBe(true);
     });
   });

@@ -1,11 +1,13 @@
 import type { LearnerProfile, SessionArtifact, SessionRun } from '../domain/types';
 import { ArchitektService } from './architektService';
+import { EvalService } from './evalService';
 import { GrammatiktrainerService } from './grammatiktrainerService';
 import { KorrektorService } from './korrektorService';
 import { KuratorService } from './kuratorService';
 import { MentorService } from './mentorService';
 import { SchreibtrainerService } from './schreibtrainerService';
 import { SprechtrainerService } from './sprechtrainerService';
+import { TtsService } from './ttsService';
 import { WortmeisterService } from './wortmeisterService';
 
 function normalizeNotesRoot(notesFolder: string): string {
@@ -34,6 +36,8 @@ export class UebungsmeisterService {
   private readonly schreibtrainer: SchreibtrainerService;
   private readonly sprechtrainer: SprechtrainerService;
   private readonly korrektor: KorrektorService;
+  private readonly tts: TtsService;
+  private readonly evalService: EvalService;
 
   constructor(private readonly notesFolder: string) {
     const normalized = normalizeNotesRoot(notesFolder);
@@ -45,6 +49,8 @@ export class UebungsmeisterService {
     this.schreibtrainer = new SchreibtrainerService(normalized);
     this.sprechtrainer = new SprechtrainerService(normalized);
     this.korrektor = new KorrektorService(normalized);
+    this.tts = new TtsService(normalized);
+    this.evalService = new EvalService(normalized);
   }
 
   private getNotesRoot(): string {
@@ -67,6 +73,39 @@ export class UebungsmeisterService {
       : this.sprechtrainer.buildSpeakingArtifact(profile, planArtifactResult.plan, now);
     const correctionArtifact = this.korrektor.buildCorrectionGuideArtifact(profile, planArtifactResult.plan, now);
     const recapArtifactResult = this.mentor.buildSessionRecapArtifact(profile, planArtifactResult.plan, now);
+    const baseArtifacts: SessionArtifact[] = [
+      {
+        kind: 'session-plan',
+        path: planArtifactResult.path,
+        content: planArtifactResult.content,
+      },
+      vocabularyArtifact,
+      grammarArtifact,
+      curationArtifact,
+      applicationArtifact,
+      correctionArtifact,
+      {
+        kind: 'session-recap',
+        path: recapArtifactResult.path,
+        content: recapArtifactResult.content,
+      },
+    ];
+    const baseRun: SessionRun = {
+      sessionId,
+      generatedAt,
+      plan: planArtifactResult.plan,
+      summary: recapArtifactResult.summary,
+      artifacts: baseArtifacts,
+    };
+    const voiceArtifact = this.tts.buildVoiceGuideArtifact(baseRun);
+    const evalArtifact = this.evalService.buildEvaluationArtifact({
+      ...baseRun,
+      artifacts: [...baseArtifacts, voiceArtifact],
+    });
+    const evaluation = this.evalService.buildEvaluation({
+      ...baseRun,
+      artifacts: [...baseArtifacts, voiceArtifact, evalArtifact],
+    });
 
     const sessionRunPath = `${this.getNotesRoot()}sessions/${monthKey}/session-run-${timestamp}.md`;
     const sessionRunContent = [
@@ -102,7 +141,14 @@ export class UebungsmeisterService {
       `- Curation brief: ${curationArtifact.path}`,
       `- Application task: ${applicationArtifact.path}`,
       `- Correction guide: ${correctionArtifact.path}`,
+      `- Voice guide: ${voiceArtifact.path}`,
+      `- Session evaluation: ${evalArtifact.path}`,
       `- Session recap: ${recapArtifactResult.path}`,
+      '',
+      '## Evaluation',
+      `- Completeness: ${evaluation.completenessScore}`,
+      `- Adaptation: ${evaluation.adaptationScore}`,
+      `- Coverage: ${evaluation.coverageScore}`,
       '',
       '## Application Prompt',
       `- ${buildApplicationPrompt(profile)}`,
@@ -110,21 +156,9 @@ export class UebungsmeisterService {
     ].join('\n');
 
     const artifacts: SessionArtifact[] = [
-      {
-        kind: 'session-plan',
-        path: planArtifactResult.path,
-        content: planArtifactResult.content,
-      },
-      vocabularyArtifact,
-      grammarArtifact,
-      curationArtifact,
-      applicationArtifact,
-      correctionArtifact,
-      {
-        kind: 'session-recap',
-        path: recapArtifactResult.path,
-        content: recapArtifactResult.content,
-      },
+      ...baseArtifacts,
+      voiceArtifact,
+      evalArtifact,
       {
         kind: 'session-run',
         path: sessionRunPath,
@@ -137,6 +171,7 @@ export class UebungsmeisterService {
       generatedAt,
       plan: planArtifactResult.plan,
       summary: recapArtifactResult.summary,
+      evaluation,
       artifacts,
     };
   }

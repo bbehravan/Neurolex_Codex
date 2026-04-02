@@ -117,9 +117,9 @@ Status as of 2026-04-02:
 - Phase 1: complete
 - Phase 2: complete
 - Phase 3: complete
-- Phase 4: next
+- Phase 4: complete
 - Current recommendation:
-  move into voice, dedicated views, and stronger evaluation coverage
+  harden the dedicated NeuroLex UX and connect the deeper data layer decisions still listed in Open Decisions
 
 ### Phase 3 implementation target
 
@@ -127,6 +127,14 @@ Status as of 2026-04-02:
 - branch the application phase into `Schreibtrainer` or `Sprechtrainer`
 - make application mode and task framing respond directly to Lernauftrag and upcoming-task language
 - ensure `Uebungsmeister` packages the curation brief and application artifact together with the existing session outputs
+
+### Phase 4 implementation target
+
+- add basic TTS recap support
+- add a dedicated NeuroLex session view
+- add a dedicated NeuroLex grammar graph view
+- include explicit session evaluation output in the session package
+- expand automated coverage around views, TTS, and evaluation behavior
 
 ### Phase 2 implementation target
 

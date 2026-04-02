@@ -94,10 +94,19 @@ export interface SessionArtifact {
     | 'writing-application'
     | 'speaking-application'
     | 'correction-guide'
+    | 'voice-guide'
+    | 'session-eval'
     | 'session-recap'
     | 'session-run';
   path: string;
   content: string;
+}
+
+export interface SessionEvaluation {
+  completenessScore: number;
+  adaptationScore: number;
+  coverageScore: number;
+  notes: string[];
 }
 
 export interface SessionRun {
@@ -105,5 +114,6 @@ export interface SessionRun {
   generatedAt: string;
   plan: SessionPlan;
   summary: SessionSummary;
+  evaluation?: SessionEvaluation;
   artifacts: SessionArtifact[];
 }

@@ -43,6 +43,7 @@ import { setLocale } from './i18n';
 import { ArchitektService } from './services/architektService';
 import { DiagnostikerService } from './services/diagnostikerService';
 import { MentorService } from './services/mentorService';
+import { TtsService } from './services/ttsService';
 import { UebungsmeisterService } from './services/uebungsmeisterService';
 import { ClaudeCliResolver } from './utils/claudeCli';
 import { buildCursorContext } from './utils/editor';
@@ -55,6 +56,12 @@ import {
   sdkSessionExists,
   type SDKSessionLoadResult,
 } from './utils/sdkSession';
+import { VIEW_TYPE_NEUROLEX_GRAMMAR_GRAPH, VIEW_TYPE_NEUROLEX_SESSION } from './views/constants';
+import { buildGrammarGraphViewModel } from './views/grammarGraphViewModel';
+import { NeuroLexGrammarGraphView } from './views/NeuroLexGrammarGraphView';
+import { NeuroLexSessionView } from './views/NeuroLexSessionView';
+import type { SessionViewModel } from './views/sessionViewModel';
+import { buildSessionViewModel } from './views/sessionViewModel';
 
 // ============================================
 // Subagent data merge helpers (pure functions)
@@ -223,6 +230,14 @@ export default class ClaudianPlugin extends Plugin {
       VIEW_TYPE_CLAUDIAN,
       (leaf) => new ClaudianView(leaf, this)
     );
+    this.registerView(
+      VIEW_TYPE_NEUROLEX_SESSION,
+      (leaf) => new NeuroLexSessionView(leaf, this)
+    );
+    this.registerView(
+      VIEW_TYPE_NEUROLEX_GRAMMAR_GRAPH,
+      (leaf) => new NeuroLexGrammarGraphView(leaf, this)
+    );
 
     this.addRibbonIcon('bot', 'Open NeuroLex', () => {
       this.activateView();
@@ -257,6 +272,30 @@ export default class ClaudianPlugin extends Plugin {
       name: 'Run NeuroLex session package',
       callback: async () => {
         await this.runNeuroLexSessionPackage();
+      },
+    });
+
+    this.addCommand({
+      id: 'open-neurolex-session-view',
+      name: 'Open NeuroLex session view',
+      callback: async () => {
+        await this.activateAuxiliaryNeuroLexView(VIEW_TYPE_NEUROLEX_SESSION);
+      },
+    });
+
+    this.addCommand({
+      id: 'open-neurolex-grammar-graph-view',
+      name: 'Open NeuroLex grammar graph view',
+      callback: async () => {
+        await this.activateAuxiliaryNeuroLexView(VIEW_TYPE_NEUROLEX_GRAMMAR_GRAPH);
+      },
+    });
+
+    this.addCommand({
+      id: 'speak-neurolex-session-recap',
+      name: 'Speak NeuroLex session recap',
+      callback: async () => {
+        await this.speakNeuroLexSessionRecap();
       },
     });
 
@@ -412,6 +451,26 @@ export default class ClaudianPlugin extends Plugin {
       if (newLeaf) {
         await newLeaf.setViewState({
           type: VIEW_TYPE_CLAUDIAN,
+          active: true,
+        });
+        leaf = newLeaf;
+      }
+    }
+
+    if (leaf) {
+      workspace.revealLeaf(leaf);
+    }
+  }
+
+  async activateAuxiliaryNeuroLexView(viewType: string): Promise<void> {
+    const { workspace } = this.app;
+    let leaf = workspace.getLeavesOfType(viewType)[0];
+
+    if (!leaf) {
+      const newLeaf = workspace.getRightLeaf(false);
+      if (newLeaf) {
+        await newLeaf.setViewState({
+          type: viewType,
           active: true,
         });
         leaf = newLeaf;
@@ -640,6 +699,10 @@ export default class ClaudianPlugin extends Plugin {
     });
   }
 
+  private createUebungsmeisterService(): UebungsmeisterService {
+    return new UebungsmeisterService(this.getNeuroLexNotesRoot());
+  }
+
   async initializeNeuroLexLearnerProfile(): Promise<void> {
     const vault = new VaultFileAdapter(this.app);
     const diagnostiker = this.createDiagnostikerService(vault);
@@ -687,7 +750,7 @@ export default class ClaudianPlugin extends Plugin {
     const vault = new VaultFileAdapter(this.app);
     const diagnostiker = this.createDiagnostikerService(vault);
     const profile = await diagnostiker.ensureLearnerProfile();
-    const uebungsmeister = new UebungsmeisterService(this.getNeuroLexNotesRoot());
+    const uebungsmeister = this.createUebungsmeisterService();
     const sessionRun = uebungsmeister.buildSessionRun(profile);
 
     for (const artifact of sessionRun.artifacts) {
@@ -699,6 +762,40 @@ export default class ClaudianPlugin extends Plugin {
     new Notice(
       `NeuroLex session package saved. Vocabulary: ${vocabularyArtifact?.path ?? 'n/a'} | Grammar: ${grammarArtifact?.path ?? 'n/a'}`
     );
+  }
+
+  async speakNeuroLexSessionRecap(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    const sessionRun = this.createUebungsmeisterService().buildSessionRun(profile);
+    const tts = new TtsService(this.getNeuroLexNotesRoot());
+    const voiceArtifact = sessionRun.artifacts.find((artifact) => artifact.kind === 'voice-guide');
+    if (voiceArtifact) {
+      await vault.write(voiceArtifact.path, voiceArtifact.content);
+    }
+
+    const didSpeak = tts.speak(tts.buildSpeechText(sessionRun));
+    new Notice(
+      didSpeak
+        ? 'NeuroLex session recap spoken and saved as a voice guide.'
+        : 'NeuroLex voice guide saved, but live speech is unavailable in this environment.'
+    );
+  }
+
+  async buildNeuroLexSessionViewModel(): Promise<SessionViewModel> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    const sessionRun = this.createUebungsmeisterService().buildSessionRun(profile);
+    return buildSessionViewModel(sessionRun);
+  }
+
+  async buildNeuroLexGrammarGraphViewModel() {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.ensureLearnerProfile();
+    return buildGrammarGraphViewModel(profile);
   }
 
   /** Updates and persists environment variables, restarting processes to apply changes. */
