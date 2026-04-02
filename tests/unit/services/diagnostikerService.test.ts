@@ -61,7 +61,64 @@ describe('DiagnostikerService', () => {
     const profile = await service.ensureLearnerProfile();
 
     expect(profile.aiEngine).toBe('codex');
-    expect(profile.currentLevel).toBe('B1');
+    expect(profile.currentLevel).toBe('A2');
     expect(profile.grammarProgress.A1.masteryPercent).toBe(80);
+  });
+
+  test('writes a calibration note with editable snapshot and grammar lines', async () => {
+    const vault = createVaultStub();
+    const service = new DiagnostikerService(vault.adapter, baseSettings);
+
+    const path = await service.writeCalibrationNote();
+    const calibration = vault.files.get(path);
+
+    expect(path).toBe('neurolex/system/learner-calibration.md');
+    expect(calibration).toContain('# NeuroLex Calibration');
+    expect(calibration).toContain('- learner_level: B1');
+    expect(calibration).toContain('- B1: 18  # Dative Case');
+  });
+
+  test('applies calibration edits back into the learner profile', async () => {
+    const vault = createVaultStub();
+    const service = new DiagnostikerService(vault.adapter, baseSettings);
+
+    await service.ensureLearnerProfile();
+    await service.writeCalibrationNote();
+
+    const calibrationPath = service.getCalibrationNotePath();
+    const editedCalibration = [
+      '---',
+      'title: "NeuroLex Calibration"',
+      'type: learner-calibration',
+      'learner_id: primary-learner',
+      '---',
+      '',
+      '# NeuroLex Calibration',
+      '',
+      '## Editable Snapshot',
+      '- learner_level: B2',
+      '- session_duration_minutes: 75',
+      '- active_lernauftrag: Write a formal email to my landlord.',
+      '',
+      '## Grammar Mastery',
+      '### Zone A',
+      '- A1: 85  # Present Tense',
+      '### Zone B',
+      '- B1: 62  # Dative Case',
+      '- B4: 58  # Subordinate Clause Word Order',
+      '### Zone C',
+      '- C1: 15  # Passive Voice',
+      '',
+    ].join('\n');
+    vault.files.set(calibrationPath, editedCalibration);
+
+    const profile = await service.applyCalibrationNote();
+
+    expect(profile.currentLevel).toBe('B2');
+    expect(profile.preferredSessionMinutes).toBe(75);
+    expect(profile.activeLernauftrag).toBe('Write a formal email to my landlord.');
+    expect(profile.grammarProgress.B1.masteryPercent).toBe(62);
+    expect(profile.grammarProgress.C1.masteryPercent).toBe(15);
+    expect(vault.files.get(service.getProfileNotePath())).toContain('Active Lernauftrag: Write a formal email to my landlord.');
   });
 });

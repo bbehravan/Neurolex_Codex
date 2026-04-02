@@ -251,6 +251,22 @@ export default class ClaudianPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: 'generate-neurolex-calibration-note',
+      name: 'Generate NeuroLex calibration note',
+      callback: async () => {
+        await this.generateNeuroLexCalibrationNote();
+      },
+    });
+
+    this.addCommand({
+      id: 'apply-neurolex-calibration-note',
+      name: 'Apply NeuroLex calibration note',
+      callback: async () => {
+        await this.applyNeuroLexCalibrationNote();
+      },
+    });
+
+    this.addCommand({
       id: 'inline-edit',
       name: 'Inline edit',
       editorCallback: async (editor: Editor, view: MarkdownView) => {
@@ -611,6 +627,20 @@ export default class ClaudianPlugin extends Plugin {
     const diagnostiker = this.createDiagnostikerService(vault);
     const profile = await diagnostiker.ensureLearnerProfile();
     new Notice(`NeuroLex learner profile ready for ${profile.targetLanguage} (${profile.currentLevel})`);
+  }
+
+  async generateNeuroLexCalibrationNote(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const path = await diagnostiker.writeCalibrationNote();
+    new Notice(`NeuroLex calibration note saved to ${path}`);
+  }
+
+  async applyNeuroLexCalibrationNote(): Promise<void> {
+    const vault = new VaultFileAdapter(this.app);
+    const diagnostiker = this.createDiagnostikerService(vault);
+    const profile = await diagnostiker.applyCalibrationNote();
+    new Notice(`Applied NeuroLex calibration for ${profile.currentLevel} (${profile.preferredSessionMinutes} min)`);
   }
 
   async generateNeuroLexSessionPlanNote(): Promise<void> {
