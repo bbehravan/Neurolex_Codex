@@ -81,7 +81,7 @@ describe('ClaudianPlugin', () => {
 
       expect((plugin.addRibbonIcon as jest.Mock)).toHaveBeenCalledWith(
         'bot',
-        'Open Claudian',
+        'Open NeuroLex',
         expect.any(Function)
       );
     });
@@ -91,7 +91,7 @@ describe('ClaudianPlugin', () => {
 
       expect((plugin.addCommand as jest.Mock)).toHaveBeenCalledWith({
         id: 'open-view',
-        name: 'Open chat view',
+        name: 'Open NeuroLex view',
         callback: expect.any(Function),
       });
     });

@@ -688,6 +688,7 @@ export function getPathAccessType(
     ? normalizedCandidate
     : path.resolve(vaultPath, normalizedCandidate);
 
+  const normalizedAbsCandidate = normalizePathForComparison(absCandidate);
   const resolvedCandidate = normalizePathForComparison(resolveRealPath(absCandidate));
 
   if (resolvedCandidate === vaultReal || resolvedCandidate.startsWith(vaultReal + '/')) {
@@ -695,11 +696,24 @@ export function getPathAccessType(
   }
 
   // Allow access to specific safe subdirectories under ~/.claude/
+  const rawClaudeDir = normalizePathForComparison(path.join(os.homedir(), '.claude'));
   const claudeDir = normalizePathForComparison(resolveRealPath(path.join(os.homedir(), '.claude')));
-  if (resolvedCandidate === claudeDir || resolvedCandidate.startsWith(claudeDir + '/')) {
+  const isUnderClaudeDir =
+    resolvedCandidate === claudeDir
+    || resolvedCandidate.startsWith(claudeDir + '/')
+    || normalizedAbsCandidate === rawClaudeDir
+    || normalizedAbsCandidate.startsWith(rawClaudeDir + '/');
+
+  if (isUnderClaudeDir) {
     const safeSubdirs = ['sessions', 'projects', 'commands', 'agents', 'skills', 'plans'];
     const safeFiles = ['mcp.json', 'settings.json', 'settings.local.json', 'claudian-settings.json'];
-    const relativeToClaude = resolvedCandidate.slice(claudeDir.length + 1);
+    const claudeBase = normalizedAbsCandidate === rawClaudeDir || normalizedAbsCandidate.startsWith(rawClaudeDir + '/')
+      ? rawClaudeDir
+      : claudeDir;
+    const candidateWithinClaude = normalizedAbsCandidate === rawClaudeDir || normalizedAbsCandidate.startsWith(rawClaudeDir + '/')
+      ? normalizedAbsCandidate
+      : resolvedCandidate;
+    const relativeToClaude = candidateWithinClaude.slice(claudeBase.length + 1);
 
     if (!relativeToClaude) {
       // ~/.claude/ itself — read-only
