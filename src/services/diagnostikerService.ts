@@ -21,6 +21,10 @@ function countMasteredStructures(profile: LearnerProfile): number {
   return Object.values(profile.grammarProgress).filter((progress) => progress.masteryPercent >= 65).length;
 }
 
+function countDiagnosticNotes(profile: LearnerProfile): number {
+  return Object.values(profile.grammarProgress).filter((progress) => Boolean(progress.diagnosticNote?.trim())).length;
+}
+
 function deriveOpportunities(masteryPercent: number, previous?: GrammarProgress): number {
   if (previous && previous.opportunities > 0) return previous.opportunities;
   return masteryPercent > 0 ? 8 : 0;
@@ -134,6 +138,8 @@ export class DiagnostikerService {
       aiEngine: this.settings.aiEngine,
       targetLanguage: this.settings.targetLanguage,
       nativeLanguage: this.settings.nativeLanguage,
+      avoidanceSignals: profile.avoidanceSignals ?? [],
+      upcomingTasks: profile.upcomingTasks ?? [],
     };
   }
 
@@ -169,6 +175,7 @@ export class DiagnostikerService {
       '## Stored Diagnostics',
       `- Avoidance signals: ${profile.avoidanceSignals.length}`,
       `- Upcoming tasks: ${profile.upcomingTasks.length}`,
+      `- Structure notes: ${countDiagnosticNotes(profile)}`,
       '',
       '## Storage',
       `- Machine-readable profile: ${this.getProfileJsonPath()}`,
@@ -219,6 +226,17 @@ export class DiagnostikerService {
         ).join('\n')
         : '- none',
       '',
+      '## Structure Diagnostics',
+      Object.values(profile.grammarProgress).some((progress) => progress.diagnosticNote?.trim())
+        ? listGrammarStructures()
+          .map((structure) => {
+            const diagnosticNote = profile.grammarProgress[structure.id]?.diagnosticNote?.trim();
+            return diagnosticNote ? `- ${structure.id}: ${diagnosticNote}` : null;
+          })
+          .filter(isDefined)
+          .join('\n')
+        : '- none',
+      '',
       '## Grammar Mastery',
       grouped,
       '',
@@ -227,6 +245,7 @@ export class DiagnostikerService {
       '- Leave `active_lernauftrag` blank if there is no current real-life goal.',
       '- Avoidance signal format: `- B4: flagged | avoids subordinate clauses in speech`.',
       '- Upcoming task format: `- title: Job interview | deadline: 2026-04-10 | structures: B4, B5 | notes: formal answers`.',
+      '- Structure diagnostic format: `- B4: verb-final word order breaks under pressure`.',
       '- Unknown grammar IDs are ignored when the calibration is applied.',
       '',
     ].join('\n');
@@ -243,8 +262,17 @@ export class DiagnostikerService {
     const activeLernauftragRaw = scalarValue('active_lernauftrag');
     const avoidanceSignals = this.parseAvoidanceSignals(markdown);
     const upcomingTasks = this.parseUpcomingTasks(markdown);
+    const structureDiagnosticNotes = this.parseStructureDiagnosticNotes(markdown);
 
-    const updatedGrammarProgress = { ...profile.grammarProgress };
+    const updatedGrammarProgress = Object.fromEntries(
+      Object.entries(profile.grammarProgress).map(([structureId, progress]) => [
+        structureId,
+        {
+          ...progress,
+          diagnosticNote: structureDiagnosticNotes[structureId],
+        },
+      ])
+    );
     const grammarLinePattern = /^- ([ABC]\d+):\s*(\d{1,3})(?:\s+#.*)?$/gm;
     let match: RegExpExecArray | null;
 
@@ -262,6 +290,7 @@ export class DiagnostikerService {
         freeProductionAccuracy: Math.max(0, masteryPercent - 8),
         opportunities: deriveOpportunities(masteryPercent, previous),
         uses: deriveUses(masteryPercent, previous),
+        diagnosticNote: structureDiagnosticNotes[structureId],
       };
     }
 
@@ -326,5 +355,27 @@ export class DiagnostikerService {
         };
       })
       .filter(isDefined);
+  }
+
+  private parseStructureDiagnosticNotes(markdown: string): Record<string, string> {
+    const section = markdown.match(/## Structure Diagnostics([\s\S]*?)(?:\n## |\s*$)/);
+    if (!section) return {};
+
+    return Object.fromEntries(
+      section[1]
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith('- ') && line !== '- none')
+        .map((line) => line.slice(2))
+        .map((line): [string, string] | null => {
+          const separatorIndex = line.indexOf(':');
+          if (separatorIndex === -1) return null;
+          const structureId = line.slice(0, separatorIndex).trim();
+          const note = line.slice(separatorIndex + 1).trim();
+          if (!KNOWN_GRAMMAR_IDS.has(structureId) || !note) return null;
+          return [structureId, note];
+        })
+        .filter(isDefined)
+    );
   }
 }

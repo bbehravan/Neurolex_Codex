@@ -67,6 +67,7 @@ function analyzeFocusStructure(
   const mastery = progress?.masteryPercent ?? 0;
   const freeProductionAccuracy = progress?.freeProductionAccuracy ?? 0;
   const usageRatio = progress && progress.opportunities > 0 ? progress.uses / progress.opportunities : 0;
+  const diagnosticNote = progress?.diagnosticNote?.trim();
   const priorityBase = structure.priority === 'highest'
     ? 120
     : structure.priority === 'high'
@@ -77,6 +78,7 @@ function analyzeFocusStructure(
   const weakProductionPenalty = Math.max(0, 65 - freeProductionAccuracy) * 1.2;
   const lowMasteryPenalty = Math.max(0, 65 - mastery);
   const avoidancePenalty = usageRatio < 0.1 ? 20 : usageRatio < 0.2 ? 10 : 0;
+  const diagnosticNoteBoost = diagnosticNote ? 18 : 0;
 
   const lernauftragText = normalizeText(profile.activeLernauftrag);
   const lernauftragBoost = (
@@ -119,9 +121,12 @@ function analyzeFocusStructure(
   if (taskMatch) {
     reasons.push(`Supports upcoming task: ${taskMatch.title}.`);
   }
+  if (diagnosticNote) {
+    reasons.push(`Observed pattern: ${diagnosticNote}`);
+  }
 
   return {
-    score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + avoidanceSignalBoost + lernauftragBoost + taskBoost,
+    score: priorityBase + lowMasteryPenalty + weakProductionPenalty + avoidancePenalty + avoidanceSignalBoost + lernauftragBoost + taskBoost + diagnosticNoteBoost,
     reasons,
   };
 }

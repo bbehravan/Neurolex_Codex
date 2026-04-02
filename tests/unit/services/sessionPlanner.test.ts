@@ -83,6 +83,27 @@ describe('buildSessionPlan', () => {
     expect(plan.focusStructures[0]).toBe('B1');
   });
 
+  test('surfaces stored structure notes in the focus rationale', () => {
+    const plan = buildSessionPlan({
+      ...baseProfile,
+      grammarProgress: {
+        ...baseProfile.grammarProgress,
+        B4: {
+          structureId: 'B4',
+          masteryPercent: 32,
+          freeProductionAccuracy: 26,
+          opportunities: 10,
+          uses: 2,
+          diagnosticNote: 'verb-final word order breaks under pressure',
+        },
+      },
+    });
+
+    expect(plan.focusStructures).toContain('B4');
+    expect(plan.focusSelections.find((selection) => selection.structureId === 'B4')?.reasons.join(' '))
+      .toContain('Observed pattern: verb-final word order breaks under pressure');
+  });
+
   test('prioritizes explicitly flagged avoidance targets', () => {
     const plan = buildSessionPlan({
       ...baseProfile,

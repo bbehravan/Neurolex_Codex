@@ -81,6 +81,7 @@ describe('DiagnostikerService', () => {
     expect(calibration).toContain('- learner_level: B1');
     expect(calibration).toContain('## Avoidance Signals');
     expect(calibration).toContain('## Upcoming Tasks');
+    expect(calibration).toContain('## Structure Diagnostics');
     expect(calibration).toContain('- B1: 18  # Dative Case');
   });
 
@@ -113,6 +114,10 @@ describe('DiagnostikerService', () => {
       '## Upcoming Tasks',
       '- title: Job interview | deadline: 2026-04-10 | structures: B4, B5 | notes: formal answers',
       '',
+      '## Structure Diagnostics',
+      '- B4: verb-final word order breaks under pressure',
+      '- B5: polite requests collapse into direct commands',
+      '',
       '## Grammar Mastery',
       '### Zone A',
       '- A1: 85  # Present Tense',
@@ -142,9 +147,12 @@ describe('DiagnostikerService', () => {
         notes: 'formal answers',
       },
     ]);
+    expect(profile.grammarProgress.B4.diagnosticNote).toBe('verb-final word order breaks under pressure');
+    expect(profile.grammarProgress.B5.diagnosticNote).toBe('polite requests collapse into direct commands');
     expect(profile.grammarProgress.B1.masteryPercent).toBe(62);
     expect(profile.grammarProgress.C1.masteryPercent).toBe(15);
     expect(vault.files.get(service.getProfileNotePath())).toContain('Active Lernauftrag: Write a formal email to my landlord.');
     expect(vault.files.get(service.getProfileNotePath())).toContain('Avoidance signals: 2');
+    expect(vault.files.get(service.getProfileNotePath())).toContain('Structure notes: 2');
   });
 });

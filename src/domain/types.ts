@@ -17,6 +17,7 @@ export interface GrammarProgress {
   freeProductionAccuracy: number;
   opportunities: number;
   uses: number;
+  diagnosticNote?: string;
 }
 
 export interface AvoidanceSignal {

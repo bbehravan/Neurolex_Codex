@@ -35,7 +35,14 @@ const profile: LearnerProfile = {
     A6: { structureId: 'A6', masteryPercent: 68, freeProductionAccuracy: 62, opportunities: 10, uses: 6 },
     B1: { structureId: 'B1', masteryPercent: 18, freeProductionAccuracy: 12, opportunities: 12, uses: 1 },
     B3: { structureId: 'B3', masteryPercent: 58, freeProductionAccuracy: 56, opportunities: 8, uses: 4 },
-    B4: { structureId: 'B4', masteryPercent: 22, freeProductionAccuracy: 15, opportunities: 9, uses: 2 },
+    B4: {
+      structureId: 'B4',
+      masteryPercent: 22,
+      freeProductionAccuracy: 15,
+      opportunities: 9,
+      uses: 2,
+      diagnosticNote: 'verb-final word order breaks under pressure',
+    },
   },
 };
 
@@ -58,5 +65,6 @@ describe('ArchitektService', () => {
     expect(artifact.content).toContain('Avoidance signal: B4 is flagged');
     expect(artifact.content).toContain('Upcoming task: Job interview');
     expect(artifact.content).toContain('Upcoming task: Weekend chat');
+    expect(artifact.content).toContain('Observed pattern: verb-final word order breaks under pressure');
   });
 });
